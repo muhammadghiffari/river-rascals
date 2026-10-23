@@ -46,6 +46,8 @@ class HookTests(unittest.TestCase):
     def test_allows_first_creation_of_main(self):
         self.assertEqual(self.run_hook("refs/heads/main", ZERO)[0].returncode, 0)
 
+        
+    @unittest.skipIf(os.name == "nt", "stub git-lfs has no .exe, so `git lfs` can't find it on Windows; covered by Linux CI")
     def test_allows_feature_branch_and_forwards_input_to_lfs(self):
         r, line = self.run_hook("refs/heads/feat/x", SHA)
         self.assertEqual(r.returncode, 0)
