@@ -1,12 +1,12 @@
-# Replace @p1 @p2 @p3 with real GitHub usernames after bootstrap.
-*                       @p1
-/assets/                @p2
-/tools/blender/         @p2
-/docs/04_*              @p2
-/docs/05_*              @p2
-/docs/06_*              @p3
-/docs/02_*              @p3
-/docs/13_*              @p3
-/src/                   @p1
-/.github/               @p1
-/opencode.json          @p1
+# Replace @muhammadghiffari @Catalna @hicesse with real GitHub usernames after bootstrap.
+*                       @muhammadghiffari
+/assets/                @Catalna
+/tools/blender/         @Catalna
+/docs/04_*              @Catalna
+/docs/05_*              @Catalna
+/docs/06_*              @hicesse
+/docs/02_*              @hicesse
+/docs/13_*              @hicesse
+/src/                   @muhammadghiffari
+/.github/               @muhammadghiffari
+/opencode.json          @muhammadghiffari
