@@ -1,0 +1,27 @@
+[project]
+name = "river-rascals"
+version = "0.1.0"
+requires-python = ">=3.10"
+description = "River Rascals - cozy-chaotic co-op rafting game on UPBGE (working title)"
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["UP037", "UP031"]   # UP031: %-format kept in tiny Blender/BGE scripts (identical output on all Python versions)
+
+[tool.ruff.lint.flake8-bugbear]
+# Frozen dataclasses are immutable, so using them as default arguments is safe.
+extend-immutable-calls = ["rr.core.buoyancy.BuoyancyConfig", "rr.core.oar.OarConfig"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/rr/glue/*" = ["F401"]          # bge/mathutils only importable inside UPBGE
+"game/rr_components.py" = ["F401", "E402"]
+"tools/blender/*" = ["E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

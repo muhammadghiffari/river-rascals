@@ -1,0 +1,84 @@
+id,category,name,tris_budget,texture,variants,phase,owner,prompt_hint
+CH_OtterBase,Character,"Hero otter (chibi, 3 heads tall)",6000,palette 512,4 colourways via palette swap,2,P2,"Friendly otter, big round head, short limbs, thick tail, paddle-ready seated pose compatible. Clean quad topology, deformation-friendly shoulders/elbows. 25-bone rig per docs/05."
+CH_OtterHats,Character,"Hat set: sun hat, beanie, tricorn, flower crown",600,palette,4 items,3,P2,"Four separate meshes parented to head bone, each <=600 tris, readable silhouette."
+CH_OtterEyewear,Character,Goggles and round glasses,300,palette,2 items,3,P2,Two accessories attached to head bone; transparent lenses via simple alpha-clip material.
+CH_OtterNeck,Character,Scarf and bandana,400,palette,2 items,3,P2,Two neck accessories with 2-bone flutter chain for cheap secondary motion.
+CH_BearNPC,Character,Bear fisherman NPC,7000,palette 512,1,3,P2,"Large friendly bear, fishing pose, belly-forward silhouette, 20-bone rig."
+CH_BeaverNPC,Character,Beaver builder NPC,5000,palette 512,1,3,P2,"Beaver with hard hat, flat tail, simple rig; carries a log."
+CH_HeronNPC,Character,Heron ambient bird,3000,palette 256,1,3,P2,"Tall wading bird, long neck 6-bone chain, idle/fly-off animation."
+CH_FrogAmbient,Character,Frog on lily pad,1500,palette 128,1,3,P2,"Cartoon frog, croak jaw bone, jump."
+CH_DuckFlock,Character,Duck (instanced flock),500,palette 128,3 colours,3,P2,"Tiny duck, one bone, swim bob; designed for dupli-base spawning."
+CH_FishSchool,Character,Fish (instanced school),300,palette 128,3 colours,3,P2,"Tiny fish silhouette, 2-bone tail sway."
+CH_Dragonfly,Character,Dragonfly (billboard-ish),200,palette 128,1,3,P2,"Two crossed wing quads + body, shader wing flutter."
+RF_RaftT1,Raft,Raft tier 1 (logs + rope),6000,palette 1024,damage states x3,2,P2,"3.2m x 2.4m x 0.4m (Y,X,Z). Round logs lashed with rope, four seat slots as empties, 6 BuoySample empties, COL box. Origin at centre of mass."
+RF_RaftT2,Raft,Raft tier 2 (planks + barrels),7500,palette 1024,damage x3,3,P2,"Same footprint, plank deck, side barrels for float, small flag."
+RF_RaftT3,Raft,Raft tier 3 (expedition raft),8000,palette 1024,damage x3,4,P2,"Reinforced with metal bands, lantern posts, canopy option."
+RF_Oar,Raft,Oar (left/right via mirror),500,palette 256,1,2,P2,"Wooden oar 1.6 m, blade flat, pivot at oarlock; separate mesh for animation."
+RF_SeatSlot,Raft,Seat/oarlock fittings,300,palette,1,2,P2,Four oarlocks and thwarts.
+RF_Mast,Raft,Mast and flag,600,palette,3 flags,3,P2,"Short mast, cloth flag with 4-bone flutter."
+RF_Lantern,Raft,Raft lantern,400,palette + emissive,1,4,P2,Hanging lantern with emissive glass.
+RF_BarrelCargo,Raft,Cargo barrels and sacks,400,palette,3,3,P2,Strap-on cargo props.
+RF_RopeCoil,Raft,Rope coil and throw rope,400,palette,1,3,P2,Coiled rope prop plus straight rope segment for rescue throw.
+PR_Coin,Prop,Floating coin,200,palette,1,2,P2,"Chunky coin with acorn emblem, bobbing."
+PR_GoldenFish,Prop,Golden fish collectible,400,palette+emissive,1,2,P2,Stylised golden fish leaping pose.
+PR_Buoy,Prop,Buoy marker,300,palette,2,2,P2,Red/white buoy with chain stub.
+PR_Log,Prop,Floating log obstacle,600,palette,3 sizes,2,P2,"Cylindrical log with knots, COL capsule."
+PR_LilyPad,Prop,Lily pad cluster,150,palette,3,3,P2,"Flat leaf discs with flower, alpha-clip free."
+PR_ReedCluster,Prop,Reed/cattail cluster,300,palette,3,2,P2,"Crossed-card reeds, wind sway vertex colours."
+PR_RockSmall,Prop,Rock small,300,palette,3,2,P2,"Faceted low-poly river rock, COL convex."
+PR_RockMed,Prop,Rock medium,600,palette,3,2,P2,"Medium rock, COL convex hull."
+PR_RockLarge,Prop,Rock large / boulder,1200,palette,3,2,P2,Boulder with moss patches via vertex colour.
+PR_RockCluster,Prop,Boulder cluster,2500,palette,2,3,P2,Group of rocks for rapids.
+PR_Driftwood,Prop,Driftwood,500,palette,3,3,P2,Branchy driftwood.
+PR_DockSection,Prop,Dock section,800,palette,2,3,P2,Modular dock planks and posts.
+PR_BridgeWood,Prop,Wooden bridge,3000,palette,2,3,P2,"Spans 14 m, clearance 3 m, rope rails."
+PR_Cabin,Prop,Riverside cabin,3000,palette 512,2,3,P2,Cosy cabin with chimney.
+PR_Tent,Prop,Camp tent,600,palette,3,3,P2,Triangular tent.
+PR_Campfire,Prop,Campfire,400,palette+emissive,1,3,P2,"Log ring, fire card particles hook."
+PR_Signpost,Prop,Signpost,300,palette,3,2,P2,"Directional arrows, readable at 20 m."
+PR_LanternPost,Prop,Lantern post,400,palette+emissive,1,4,P2,Riverbank lantern.
+PR_Mailbox,Prop,Whimsical mailbox,300,palette,1,3,P2,Easter-egg prop.
+PR_CheckpointArch,Prop,Checkpoint arch with banner,1500,palette 512,1,2,P2,"Spans the river 8 m, cloth banner with flutter bones."
+PR_FinishGate,Prop,Finish gate,2000,palette 512,1,2,P2,"Larger arch, confetti hook points."
+PR_BeaverDam,Prop,Beaver dam obstacle,2500,palette,1,3,P2,"Gap in the middle, COL pieces."
+PR_WaterfallLip,Prop,Waterfall lip rocks,3000,palette,2,3,P2,Rock lips framing waterfall.
+PR_WhirlpoolDisc,Prop,Whirlpool visual disc,800,shader,1,3,P2,"Spiral disc mesh for shader, radius 6 m."
+EN_PineTree,Environment,Pine tree,800,palette,3 variants + LOD1 200,2,P2,"Stylised tapered pine, wind sway vertex colours."
+EN_BirchTree,Environment,Birch tree,700,palette,2,3,P2,"White trunk, leaf clusters."
+EN_Bush,Environment,Bush,200,palette,3,2,P2,Rounded bush.
+EN_Fern,Environment,Fern,120,palette,2,3,P2,Cross cards.
+EN_Flowers,Environment,Flower patches,150,palette,4,3,P2,Colour accents.
+EN_Mushrooms,Environment,Mushroom cluster,200,palette,3,3,P2,Cute red/white caps.
+EN_CliffModular,Environment,Modular cliff pieces,2000,palette 1024,6 pieces,3,P2,"Snap on 4 m grid, tileable edges."
+EN_CanyonWall,Environment,Canyon wall modules,3000,palette 1024,6 pieces,3,P2,"Layered rock strata, snap on 8 m grid."
+EN_BankTile,Environment,Riverbank tiles,1500,palette 1024,4 tiles,2,P2,Shore transition tiles with foam anchor edge verts.
+EN_MountainBackdrop,Environment,Mountain backdrop,2000,palette 512,3,3,P2,"Distant silhouettes, unlit."
+EN_CloudCards,Environment,Cloud cards,100,alpha 512,4,3,P2,Billboard clouds.
+EN_SkyDay,Environment,Sky gradient day,0,shader,1,2,P2,Gradient sky; no HDRI needed.
+EN_SkyDusk,Environment,Sky gradient dusk,0,shader,1,3,P2,Warm gradient.
+EN_SkyNight,Environment,Sky night with stars,0,shader,1,4,P2,Star field shader.
+EN_SkyStorm,Environment,Sky storm,0,shader,1,4,P2,Dark clouds gradient.
+EN_RiverStrip,Environment,River surface strip mesh,3000,shader,1 per chapter,2,P2,"Subdivided ribbon following centerline, UV along flow."
+EN_Waterfall,Environment,Waterfall mesh,1500,shader,1,3,P2,Vertical sheet with scrolling flow shader.
+EN_GrassCards,Environment,Grass cards,100,alpha 512,3,3,P2,Cross cards.
+VX_Splash,VFX,Splash particle sprite sheet,8,atlas 512,1,2,P2,"4x4 sprite sheet, additive-friendly."
+VX_Wake,VFX,Wake trail strip,100,atlas 256,1,2,P2,V-shaped foam trail.
+VX_FoamRing,VFX,Foam ring decal,8,256,1,2,P2,Foam around rocks.
+VX_Bubbles,VFX,Bubbles sprite,8,128,1,3,P2,Bubble set.
+VX_Fireflies,VFX,Firefly particles,8,128,1,4,P2,Glow dot.
+VX_Leaves,VFX,Falling leaves,8,atlas 256,1,3,P2,Leaf sprites.
+VX_Mist,VFX,Mist cards,8,256,1,3,P2,Soft fog sheets.
+VX_Rain,VFX,Rain streaks,8,128,1,4,P2,Streak sprite + splash.
+VX_Sparkle,VFX,Collect sparkle,8,128,1,2,P2,Star sparkle.
+VX_Impact,VFX,Impact wood chips/dust,8,atlas 256,1,2,P2,Debris sprites.
+VX_Confetti,VFX,Confetti,8,128,1,3,P2,Celebration.
+UI_IconSet,UI,HUD icon set,2000,atlas 1024,1,2,P3,"Coin, fish, hull hearts, flag, pad, gear, speaker (vector -> PNG, 128 px)."
+UI_Logo,UI,Game logo,0,2048,1,3,P3,Chunky hand-lettered logo; own design.
+UI_Frames,UI,HUD frames and buttons,0,atlas 1024,1,2,P3,"9-slice panels, button states."
+UI_MenuBG,UI,Main menu background scene,3000,palette,1,3,P2,"Cosy river vista, parallax layers."
+UI_Fonts,UI,Fonts (OFL only),0,ttf,2,2,P3,"One display + one body font, cover EN/ID, record licence."
+MT_ToonBase,Material,Toon base material (palette lookup),0,palette,1,2,P2,"Shared palette texture, 2-band shading, optional rim; single material for most props."
+MT_Water,Material,Water material,0,shader,3 presets,2,P2,"Wave sum matching rr.core.waves, depth tint, foam at edges, flow scroll."
+MT_FoliageSway,Material,Foliage wind sway,0,shader,1,3,P2,Vertex-colour driven sway.
+MT_Foam,Material,Foam/flow material,0,shader,1,3,P2,Scrolling foam bands.
+MT_SkyGradient,Material,Sky gradient shader,0,shader,4,2,P2,"Top/horizon colours, sun glow."

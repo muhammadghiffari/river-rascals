@@ -1,0 +1,65 @@
+id,category,name,duration_s,loop,priority,generator_prompt,notes
+SFX_PaddleDip,SFX,Oar dips into water,0.4,no,P0,"Wooden oar blade dipping into river water, soft plop, close mic, no music, dry",3 variations
+SFX_PaddlePull,SFX,Oar pull / drag,0.8,no,P0,"Wooden oar pulling through water, smooth swoosh with light bubbling, close mic",3 variations
+SFX_PaddleExit,SFX,Oar lifts out dripping,0.5,no,P0,"Oar lifting out of water, short drip cascade, light splash",3 variations
+SFX_RaftCreak,SFX,Raft wood creak,1.2,no,P0,"Wooden raft logs creaking under weight with rope tension, gentle","4 variations, random pitch"
+SFX_RaftBumpSoft,SFX,Soft bump,0.5,no,P0,"Soft thud of wooden raft bumping a mossy rock, muffled",3 variations
+SFX_RaftBumpHard,SFX,Hard hit,0.8,no,P0,"Heavy wood impact on stone with splintering crack, short, punchy",3 variations
+SFX_RaftBreak,SFX,Hull damage crack,1.0,no,P1,"Wooden planks cracking and snapping, mid-intensity, cartoonish",2
+SFX_RaftRepair,SFX,Repair hammer,1.2,no,P1,"Cartoon hammering and rope tying, cheerful",2
+SFX_SplashSmall,SFX,Small splash,0.6,no,P0,"Small water splash, light droplets, bright",4
+SFX_SplashBig,SFX,Big splash (fall in),1.2,no,P0,"Large splash of a body falling into river, dull plunge then bubbles",3
+SFX_WaterRushLoop,SFX,Rapids rush loop,8.0,yes,P0,"Whitewater rapids rushing, seamless loop, no voices, no music",stereo
+SFX_WaterfallLoop,SFX,Waterfall loop,8.0,yes,P1,"Large waterfall roar with mist hiss, seamless loop",stereo
+SFX_WhirlpoolLoop,SFX,Whirlpool loop,6.0,yes,P1,"Water swirling gurgling whirlpool, hollow, seamless loop",3D
+SFX_RopeThrow,SFX,Rope throw,0.7,no,P1,"Rope whipping through air, light whoosh",2
+SFX_RopeGrab,SFX,Rope catch,0.4,no,P1,"Hand grabbing rope, tight squeak",2
+SFX_CoinPickup,SFX,Coin collect,0.5,no,P0,"Cheerful bright coin chime, cartoon, short, ascending",pitch up on streak
+SFX_FishPickup,SFX,Golden fish collect,0.9,no,P0,"Magical sparkle shimmer with a splashy flop, joyful",1
+SFX_Checkpoint,SFX,Checkpoint reached,1.5,no,P0,"Warm triumphant fanfare of three notes on wooden flute and marimba, short",1
+SFX_Finish,SFX,Chapter complete sting,3.0,no,P0,"Cozy celebratory sting, acoustic guitar, flute and shaker, resolves major, 3 seconds",1
+SFX_Fail,SFX,Fail / sunk sting,2.0,no,P1,"Gentle comedic descending trombone and bubbles, not harsh",1
+SFX_OtterChirp,SFX,Otter happy chirp,0.5,no,P0,"Cute otter chirp squeak, playful, high pitched, no human words",6 variations
+SFX_OtterPanic,SFX,Otter panic,0.8,no,P0,"Cartoon otter alarmed squeal, short",4
+SFX_OtterCheer,SFX,Otter cheer,1.0,no,P1,"Group of cute otters cheering with chirps, joyful",3
+SFX_OtterSplashOut,SFX,Otter climbs back,0.9,no,P1,"Wet climbing onto wooden raft, dripping, scramble",2
+SFX_Emote,SFX,Emote pops,0.5,no,P2,"Cute pop and bubble sounds for emotes, 4 distinct",4
+SFX_BoostZone,SFX,Current boost whoosh,1.0,no,P1,"Water surge whoosh speeding up, rising",1
+SFX_LogBonk,SFX,Log bonk,0.6,no,P1,"Hollow wooden log bonk, cartoon",3
+SFX_BearGrowlFriendly,SFX,Bear friendly rumble,1.2,no,P2,"Big friendly bear low chuckle rumble, cartoon",2
+SFX_BeaverChop,SFX,Beaver chopping,1.0,no,P2,"Small teeth gnawing wood, rhythmic",2
+SFX_HeronFlap,SFX,Heron wing flaps,1.0,no,P2,Large bird wings flapping taking off from water,2
+SFX_Frog,SFX,Frog croak,0.6,no,P2,Cute frog croak ribbit,3
+SFX_Thunder,SFX,Thunder,4.0,no,P2,"Distant rolling thunder, soft, no sharp crack",3
+SFX_RainLoop,SFX,Rain loop,10.0,yes,P2,"Gentle rain on river and leaves, seamless loop",stereo
+SFX_LanternFlicker,SFX,Lantern flicker,3.0,yes,P3,"Soft flame flicker loop, very quiet",1
+UI_Click,UI,Menu click,0.15,no,P0,"Soft wooden click, tiny",1
+UI_Hover,UI,Menu hover,0.1,no,P0,"Very soft tick, subtle",1
+UI_Confirm,UI,Confirm,0.4,no,P0,Positive two-note marimba blip,1
+UI_Back,UI,Back/cancel,0.3,no,P0,Soft descending two-note blip,1
+UI_Join,UI,Player join,0.7,no,P1,"Happy rising chime with a splash, playful",1
+UI_Leave,UI,Player leave,0.6,no,P1,Soft falling blip,1
+UI_Pause,UI,Pause,0.4,no,P1,Muffled low-pass whoosh in,1
+UI_Unlock,UI,Unlock cosmetic,1.2,no,P2,Sparkling reveal chime,1
+AMB_Creek,Ambience,Sleepy Creek ambience,60.0,yes,P0,"Gentle creek, birds chirping, light breeze through pines, no voices, seamless loop 60s",stereo
+AMB_Pines,Ambience,Pine rapids ambience,60.0,yes,P1,"Forest wind, distant rapids, woodpecker occasionally, seamless loop",stereo
+AMB_Canyon,Ambience,Misty canyon ambience,60.0,yes,P2,"Canyon echo wind, dripping water, low drones subtle, seamless loop",stereo
+AMB_Lagoon,Ambience,Night lagoon ambience,60.0,yes,P2,"Night crickets, frogs, soft water lapping, owl once, seamless loop",stereo
+AMB_Thunder,Ambience,Thunder falls ambience,60.0,yes,P2,"Storm wind, big waterfall roar background, seamless loop",stereo
+AMB_Menu,Ambience,Menu ambience,60.0,yes,P1,"Warm campsite evening, soft fire crackle, crickets, seamless loop",stereo
+MUS_Menu,Music,Main menu theme,90.0,yes,P1,"Cozy acoustic folk instrumental, fingerpicked acoustic guitar, ukulele, soft hand percussion, warm, 92 BPM, loopable, no vocals, adventure-in-nature mood","stereo, seamless loop"
+MUS_Ch1_Base,Music,Ch1 calm stem (base),96.0,yes,P0,"Gentle playful acoustic instrumental, ukulele and light marimba, 100 BPM, sunny, loopable, no vocals",stem A - always playing
+MUS_Ch1_Rhythm,Music,Ch1 rhythm stem,96.0,yes,P0,"Same key and tempo as base 100 BPM: shaker, cajon, hand claps, upbeat, loopable, no vocals",stem B - active near hazards
+MUS_Ch1_Danger,Music,Ch1 danger stem,96.0,yes,P1,"Same key and tempo 100 BPM: urgent strings pizzicato, toms, rising tension but still playful, loopable",stem C - rapids/danger
+MUS_Ch2_Base,Music,Ch2 base stem,96.0,yes,P1,"Energetic folk instrumental, banjo and fiddle, 118 BPM, forest rapids adventure, loopable, no vocals",A
+MUS_Ch2_Rhythm,Music,Ch2 rhythm stem,96.0,yes,P1,"Same key/tempo 118 BPM: foot stomps, snare brushes, mandolin chops, loopable",B
+MUS_Ch2_Danger,Music,Ch2 danger stem,96.0,yes,P2,"Same key/tempo 118 BPM: driving percussion, fiddle runs, intense, loopable",C
+MUS_Ch3_Base,Music,Ch3 base stem,96.0,yes,P2,"Mysterious misty canyon, soft piano, cello and flute, 84 BPM, echoing, loopable, no vocals",A
+MUS_Ch3_Rhythm,Music,Ch3 rhythm stem,96.0,yes,P2,"Same key/tempo 84 BPM: low frame drum, shakers, pulsing pizzicato",B
+MUS_Ch3_Danger,Music,Ch3 danger stem,96.0,yes,P2,"Same key/tempo 84 BPM: tense cello ostinato, taiko hits",C
+MUS_Ch4_Base,Music,Ch4 night lagoon (single),120.0,yes,P3,"Dreamy lullaby, kalimba, soft pads, celesta, 70 BPM, peaceful night, loopable, no vocals","calm chapter, no stems"
+MUS_Ch5_Base,Music,Ch5 finale base stem,96.0,yes,P3,"Epic but cozy adventure orchestral-folk, strings, brass, acoustic guitar, 126 BPM, loopable, no vocals",A
+MUS_Ch5_Rhythm,Music,Ch5 finale rhythm stem,96.0,yes,P3,"Same key/tempo 126 BPM: big drums, shakers, claps",B
+MUS_Ch5_Danger,Music,Ch5 finale danger stem,96.0,yes,P3,"Same key/tempo 126 BPM: full tension brass stabs, rapid strings",C
+MUS_Victory,Music,Victory jingle,12.0,no,P1,"Joyful acoustic celebration, ukulele, flute, claps, resolves, 12 seconds",1
+MUS_Credits,Music,Credits theme,120.0,no,P3,"Warm reprise of a folk adventure theme with guitar and strings, gentle",1

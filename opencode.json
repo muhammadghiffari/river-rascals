@@ -1,0 +1,206 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "Greg/deepseek-v4-pro",
+  "small_model": "Greg/deepseek-v4-flash",
+  "default_agent": "builder",
+  "instructions": [
+    "AGENTS.md",
+    "docs/07_PHYSICS_SPEC.md"
+  ],
+  "permission": {
+    "blender_*": "deny",
+    "github_*": "deny",
+    "edit": "allow",
+    "webfetch": "allow",
+    "bash": {
+      "*": "allow",
+      "git push --force*": "deny",
+      "git push -f*": "deny",
+      "git push * --force*": "deny",
+      "git push origin main": "deny",
+      "git push -u origin main": "deny",
+      "git push origin HEAD:main": "deny",
+      "git push origin HEAD:refs/heads/main": "deny",
+      "git push --tags*": "ask",
+      "git reset --hard*": "ask",
+      "git clean -fd*": "ask",
+      "rm -rf *": "ask",
+      "gh repo delete*": "deny",
+      "gh auth token*": "deny",
+      "env": "ask",
+      "env *": "ask",
+      "printenv*": "ask",
+      "git * --no-verify*": "deny",
+      "git config*core.hooksPath*": "ask"
+    }
+  },
+  "mcp": {
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp",
+      "enabled": true
+    },
+    "blender": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "mcp-for-blender"
+      ],
+      "enabled": true,
+      "environment": {
+        "DISABLE_TELEMETRY": "true",
+        "BLENDER_HOST": "localhost",
+        "BLENDER_PORT": "9876"
+      }
+    },
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer {env:GITHUB_TOKEN}"
+      },
+      "enabled": false
+    }
+  },
+  "agent": {
+    "architect": {
+      "description": "Design, GDD/PRD/TDD, trade-offs, hard cross-module decisions. Expensive: use sparingly.",
+      "mode": "primary",
+      "model": "Greg/gpt-6-astra",
+      "reasoningEffort": "high",
+      "temperature": 0.2,
+      "prompt": "{file:./prompts/agents/architect.md}"
+    },
+    "builder": {
+      "description": "Default daily implementer: infra, CI, tools, core logic, tests, refactors.",
+      "mode": "primary",
+      "model": "Greg/deepseek-v4-pro",
+      "reasoningEffort": "medium",
+      "temperature": 0.2,
+      "prompt": "{file:./prompts/agents/builder.md}"
+    },
+    "gameplay": {
+      "description": "Complex gameplay features and UPBGE glue code (physics, oars, hazards, co-op, UI logic).",
+      "mode": "primary",
+      "model": "Greg/kimi-k3",
+      "reasoningEffort": "high",
+      "temperature": 0.2,
+      "prompt": "{file:./prompts/agents/gameplay.md}"
+    },
+    "techart": {
+      "description": "Blender/UPBGE assets, rigs, animation, shaders via Blender MCP and bpy scripts. Enable the blender MCP only for this agent.",
+      "mode": "primary",
+      "model": "Greg/deepseek-v4-pro",
+      "reasoningEffort": "medium",
+      "temperature": 0.3,
+      "prompt": "{file:./prompts/agents/techart.md}",
+      "permission": {
+        "blender_*": "allow"
+      }
+    },
+    "debugger": {
+      "description": "Hard cross-module bugs and physics instability that builder/gameplay could not fix.",
+      "mode": "subagent",
+      "model": "Greg/gpt-6-astra",
+      "reasoningEffort": "high",
+      "temperature": 0.1,
+      "prompt": "{file:./prompts/agents/debugger.md}"
+    },
+    "reviewer": {
+      "description": "Independent code/asset review. Read-only. Uses a different model family than the implementer.",
+      "mode": "subagent",
+      "model": "Greg/kimi-k3",
+      "reasoningEffort": "high",
+      "temperature": 0.1,
+      "prompt": "{file:./prompts/agents/reviewer.md}",
+      "permission": {
+        "edit": "deny",
+        "bash": {
+          "*": "deny",
+          "git diff*": "allow",
+          "git log*": "allow",
+          "git show*": "allow",
+          "git status*": "allow",
+          "git blame*": "allow",
+          "git grep*": "allow",
+          "git ls-files*": "allow",
+          "ls*": "allow",
+          "python -m pytest*": "allow",
+          "python -m unittest*": "allow",
+          "python -m compileall*": "allow",
+          "ruff check*": "allow",
+          "python tools/validate_assets.py*": "allow",
+          "python scripts/check_env.py*": "allow",
+          "gh pr view*": "allow",
+          "gh pr diff*": "allow",
+          "gh pr checks*": "allow",
+          "gh pr list*": "allow",
+          "gh issue view*": "allow",
+          "gh issue list*": "allow",
+          "gh run list*": "allow",
+          "gh run view*": "allow"
+        }
+      }
+    },
+    "qa": {
+      "description": "Run tests/smoke tests, triage failures, write unit tests, fix lint.",
+      "mode": "subagent",
+      "model": "Greg/deepseek-v4-flash",
+      "reasoningEffort": "low",
+      "temperature": 0.1,
+      "prompt": "{file:./prompts/agents/qa.md}"
+    },
+    "security": {
+      "description": "Security, secrets, license and MCP-permission audit. Read-only.",
+      "mode": "subagent",
+      "model": "Greg/gpt-6-astra",
+      "reasoningEffort": "high",
+      "temperature": 0.1,
+      "prompt": "{file:./prompts/agents/security.md}",
+      "permission": {
+        "edit": "deny",
+        "bash": {
+          "*": "deny",
+          "git diff*": "allow",
+          "git log*": "allow",
+          "git show*": "allow",
+          "git status*": "allow",
+          "git blame*": "allow",
+          "git grep*": "allow",
+          "git ls-files*": "allow",
+          "ls*": "allow",
+          "python -m pytest*": "allow",
+          "python -m unittest*": "allow",
+          "python -m compileall*": "allow",
+          "ruff check*": "allow",
+          "python tools/validate_assets.py*": "allow",
+          "python scripts/check_env.py*": "allow",
+          "gh pr view*": "allow",
+          "gh pr diff*": "allow",
+          "gh pr checks*": "allow",
+          "gh pr list*": "allow",
+          "gh issue view*": "allow",
+          "gh issue list*": "allow",
+          "gh run list*": "allow",
+          "gh run view*": "allow"
+        }
+      }
+    },
+    "docs": {
+      "description": "Technical docs, changelog, release notes, README upkeep.",
+      "mode": "subagent",
+      "model": "Greg/glm-5.2",
+      "reasoningEffort": "low",
+      "temperature": 0.3,
+      "prompt": "{file:./prompts/agents/docs.md}"
+    },
+    "release": {
+      "description": "Release readiness gate, tagging, build/export checklist.",
+      "mode": "subagent",
+      "model": "Greg/gpt-6-astra",
+      "reasoningEffort": "high",
+      "temperature": 0.1,
+      "prompt": "{file:./prompts/agents/release.md}"
+    }
+  }
+}

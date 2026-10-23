@@ -1,0 +1,33 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+# Blender / UPBGE
+*.blend1
+*.blend2
+*.blend@
+*.autosave
+/dist/
+/build/
+# Test / run artefacts
+smoke_result.json
+*.corrupt
+# Secrets & local config (NEVER commit)
+.env
+.env.*
+*.key
+*.pem
+# Personal OpenCode overrides (see docs/08 section 5)
+.opencode/opencode.json
+.opencode/opencode.jsonc
+# Local savegames
+/saves/

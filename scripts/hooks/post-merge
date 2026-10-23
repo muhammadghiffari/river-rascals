@@ -1,0 +1,4 @@
+#!/bin/sh
+# Git LFS hook (needed because core.hooksPath points here; makes lockable .blend files read-only until locked).
+command -v git-lfs >/dev/null 2>&1 || { echo >&2 "git-lfs not found on PATH (install Git LFS)."; exit 2; }
+git lfs post-merge "$@"

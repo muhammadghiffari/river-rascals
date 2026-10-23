@@ -1,0 +1,6 @@
+// Copy to .opencode/opencode.jsonc (git-ignored). Merged on top of the project opencode.json.
+// Example: P1 and P3 do not drive Blender through an agent, so disable the Blender MCP locally.
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": { "blender": { "enabled": false } }
+}

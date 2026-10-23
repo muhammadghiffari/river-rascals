@@ -1,0 +1,660 @@
+[
+  {
+    "id": "F-01",
+    "milestone": "M0 Foundation",
+    "owner": "P1",
+    "agent": "builder",
+    "labels": [
+      "type:infra"
+    ],
+    "title": "[F-01] Bootstrap GitHub repo, LFS, labels, milestones, issues",
+    "body": "**Goal**\nRun scripts/bootstrap_github.py per docs/00_START_HERE_AGENT.md.\n\n**Acceptance criteria**\n- [ ] Repo exists, main pushed\n- [ ] LFS active (git lfs ls-files works)\n- [ ] Labels+milestones+issues created\n- [ ] Teammates invited\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "F-02",
+    "milestone": "M0 Foundation",
+    "owner": "P1",
+    "agent": "builder",
+    "labels": [
+      "type:infra"
+    ],
+    "title": "[F-02] Verify CI green and protect main",
+    "body": "**Goal**\nMake the ci workflow pass on main; set CODEOWNERS usernames; enable branch protection if plan allows.\n\n**Acceptance criteria**\n- [ ] CI green on main\n- [ ] CODEOWNERS has real usernames\n- [ ] Direct pushes to main blocked or policy documented\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "F-03",
+    "milestone": "M0 Foundation",
+    "owner": "P1",
+    "agent": "docs",
+    "labels": [
+      "type:docs"
+    ],
+    "title": "[F-03] Teammate onboarding runbook verified",
+    "body": "**Goal**\nWalk P2 and P3 through docs/12 sections 7-8; fix anything unclear.\n\n**Acceptance criteria**\n- [ ] P2 and P3 can clone, git lfs pull, run check_env.py\n- [ ] Both can run opencode with repo config\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "F-04",
+    "milestone": "M0 Foundation",
+    "owner": "P2",
+    "agent": "techart",
+    "labels": [
+      "type:infra"
+    ],
+    "title": "[F-04] Install pinned UPBGE on ASUS V16 + Blender MCP smoke test",
+    "body": "**Goal**\nInstall UPBGE (pinned version), set UPBGE_PATH, install Blender MCP addon, create+delete a cube via MCP.\n\n**Acceptance criteria**\n- [ ] check_env.py READY\n- [ ] MCP creates a cube and returns scene info\n- [ ] Findings written to docs/16_HARDWARE_PROFILES.md\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "F-05",
+    "milestone": "M0 Foundation",
+    "owner": "P3",
+    "agent": "qa",
+    "labels": [
+      "type:qa"
+    ],
+    "title": "[F-05] Install UPBGE on mid-spec laptop and record hardware profile",
+    "body": "**Goal**\nFill hardware table in docs/16; run an empty-scene and a 100k-tri test scene; record fps at 720p/1080p.\n\n**Acceptance criteria**\n- [ ] docs/16 table complete (CPU, GPU, RAM, VRAM, OS)\n- [ ] Baseline fps numbers committed\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "F-06",
+    "milestone": "M0 Foundation",
+    "owner": "P1",
+    "agent": "architect",
+    "labels": [
+      "type:docs"
+    ],
+    "title": "[F-06] Project board, definition of ready, weekly cadence",
+    "body": "**Goal**\nCreate GitHub Project board with columns; agree weekly sync + playtest cadence (docs/11).\n\n**Acceptance criteria**\n- [ ] Board exists\n- [ ] Cadence documented\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "S-01",
+    "milestone": "M1 Tech Spikes",
+    "owner": "P1",
+    "agent": "gameplay",
+    "labels": [
+      "type:spike",
+      "risk:high"
+    ],
+    "title": "[S-01] SPIKE: pin UPBGE version (0.50/Blender 5.0.1 vs 0.44)",
+    "body": "**Goal**\nTest Python Components, aud audio, blenderplayer launch, tic rates, physics on both candidate versions on BOTH laptops.\n\n**Acceptance criteria**\n- [ ] Decision recorded in docs/03 section 2\n- [ ] Version + download URL + checksum noted\n- [ ] Known issues list\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "S-02",
+    "milestone": "M1 Tech Spikes",
+    "owner": "P1",
+    "agent": "gameplay",
+    "labels": [
+      "type:spike",
+      "area:physics",
+      "risk:high"
+    ],
+    "title": "[S-02] SPIKE: raft buoyancy and force application in UPBGE",
+    "body": "**Goal**\nValidate applyForce/applyTorque accumulation, getVelocity(point), tic rates; make a raft float stably in a test scene.\n\n**Acceptance criteria**\n- [ ] Raft rests at ~0.12 m draft within +-2 cm\n- [ ] Stable for 10 min without drift/explosion\n- [ ] VERIFY items in glue code resolved or documented\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "S-03",
+    "milestone": "M1 Tech Spikes",
+    "owner": "P1",
+    "agent": "gameplay",
+    "labels": [
+      "type:spike",
+      "area:physics"
+    ],
+    "title": "[S-03] SPIKE: oars + river flow loader + smoke test",
+    "body": "**Goal**\nHook RiverLoader/RaftOars/SmokeTest; autopaddle smoke test returns JSON via tools/run_game.py.\n\n**Acceptance criteria**\n- [ ] Smoke test prints ok:true\n- [ ] Raft follows flow when idle\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "S-04",
+    "milestone": "M1 Tech Spikes",
+    "owner": "P2",
+    "agent": "techart",
+    "labels": [
+      "type:spike",
+      "risk:high"
+    ],
+    "title": "[S-04] SPIKE: Blender MCP on UPBGE vs vanilla Blender fallback",
+    "body": "**Goal**\nCheck addon works inside the UPBGE build; otherwise author assets in vanilla Blender and append into UPBGE.\n\n**Acceptance criteria**\n- [ ] Decision recorded in docs/08\n- [ ] Round-trip: asset made via MCP loads in UPBGE scene\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "S-05",
+    "milestone": "M1 Tech Spikes",
+    "owner": "P2",
+    "agent": "techart",
+    "labels": [
+      "type:spike",
+      "area:tools"
+    ],
+    "title": "[S-05] SPIKE: run asset validator + raft blockout generator",
+    "body": "**Goal**\nRun tools/blender/gen_raft_blockout.py and validate_assets.py with the real build; fix scripts.\n\n**Acceptance criteria**\n- [ ] RF_RaftT1.blend generated and passes validator\n- [ ] Scripts fixed and committed\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "S-06",
+    "milestone": "M1 Tech Spikes",
+    "owner": "P3",
+    "agent": "qa",
+    "labels": [
+      "type:spike",
+      "area:release",
+      "risk:high"
+    ],
+    "title": "[S-06] SPIKE: standalone export and run on a clean machine/user",
+    "body": "**Goal**\nProduce a runnable build (blenderplayer package or publishing addon); run on mid laptop without Blender installed if possible.\n\n**Acceptance criteria**\n- [ ] Build runs from a folder\n- [ ] Steps documented in docs/15\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "S-07",
+    "milestone": "M1 Tech Spikes",
+    "owner": "P1",
+    "agent": "techart",
+    "labels": [
+      "type:spike",
+      "area:physics"
+    ],
+    "title": "[S-07] SPIKE: water shader matching wave_height + perf",
+    "body": "**Goal**\nPrototype water material (2-3 waves) mirroring rr.core.waves; measure fps cost on both tiers.\n\n**Acceptance criteria**\n- [ ] Visual wave phase matches physics within 3 cm\n- [ ] fps cost recorded per preset\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "S-08",
+    "milestone": "M1 Tech Spikes",
+    "owner": "P3",
+    "agent": "gameplay",
+    "labels": [
+      "type:spike",
+      "area:gameplay"
+    ],
+    "title": "[S-08] SPIKE: gamepad input in UPBGE",
+    "body": "**Goal**\nVerify joystick API, hot-plug, 4 pads, dead zones.\n\n**Acceptance criteria**\n- [ ] Report with API snippets\n- [ ] Known limits listed\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "V-01",
+    "milestone": "M2 Vertical Slice",
+    "owner": "P1",
+    "agent": "gameplay",
+    "labels": [
+      "type:feature",
+      "area:physics"
+    ],
+    "title": "[V-01] River system: centerline, banks, out-of-river handling",
+    "body": "**Goal**\nProductionise RiverLoader; bank push-back; off-river respawn.\n\n**Acceptance criteria**\n- [ ] Unit tests for new core logic\n- [ ] Raft cannot leave river permanently\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "V-02",
+    "milestone": "M2 Vertical Slice",
+    "owner": "P1",
+    "agent": "gameplay",
+    "labels": [
+      "type:feature",
+      "area:physics"
+    ],
+    "title": "[V-02] Raft physics tuning pass with test scenarios",
+    "body": "**Goal**\nImplement scenarios from docs/07 section 9 as scripted smoke tests; tune constants.\n\n**Acceptance criteria**\n- [ ] All scenarios meet acceptance numbers\n- [ ] Tunables in one data file\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "V-03",
+    "milestone": "M2 Vertical Slice",
+    "owner": "P1",
+    "agent": "gameplay",
+    "labels": [
+      "type:feature",
+      "area:gameplay"
+    ],
+    "title": "[V-03] Camera rig for 1-4 players",
+    "body": "**Goal**\nFollow camera with look-ahead, dynamic framing, collision-safe.\n\n**Acceptance criteria**\n- [ ] No clipping through banks\n- [ ] Smooth at 30 fps\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "V-04",
+    "milestone": "M2 Vertical Slice",
+    "owner": "P1",
+    "agent": "gameplay",
+    "labels": [
+      "type:feature",
+      "area:gameplay"
+    ],
+    "title": "[V-04] Solo (2 oars) and 2-player oar controls incl. gamepad",
+    "body": "**Goal**\nInput abstraction layer: devices -> player slots -> oars.\n\n**Acceptance criteria**\n- [ ] Keyboard + 1 pad work\n- [ ] Input mapping unit-tested\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "V-05",
+    "milestone": "M2 Vertical Slice",
+    "owner": "P1",
+    "agent": "gameplay",
+    "labels": [
+      "type:feature",
+      "area:physics"
+    ],
+    "title": "[V-05] Hazard: rocks with hull damage",
+    "body": "**Goal**\nCollision damage by impact speed; hull integrity; repair at checkpoints.\n\n**Acceptance criteria**\n- [ ] Damage curve unit-tested\n- [ ] Visible + audible feedback hooks fired\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "V-06",
+    "milestone": "M2 Vertical Slice",
+    "owner": "P1",
+    "agent": "gameplay",
+    "labels": [
+      "type:feature",
+      "area:physics"
+    ],
+    "title": "[V-06] Hazards: floating logs and current boosters",
+    "body": "**Goal**\nMoving obstacle + boost zone volumes.\n\n**Acceptance criteria**\n- [ ] Both work in Ch1 blockout\n- [ ] Perf within budget\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "V-07",
+    "milestone": "M2 Vertical Slice",
+    "owner": "P3",
+    "agent": "gameplay",
+    "labels": [
+      "type:feature",
+      "area:gameplay"
+    ],
+    "title": "[V-07] Collectibles: coins and golden fish",
+    "body": "**Goal**\nSpawn/collect/score, event bus integration.\n\n**Acceptance criteria**\n- [ ] Collect events tested\n- [ ] HUD counters update\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "V-08",
+    "milestone": "M2 Vertical Slice",
+    "owner": "P1",
+    "agent": "gameplay",
+    "labels": [
+      "type:feature"
+    ],
+    "title": "[V-08] Checkpoints, respawn and save/load",
+    "body": "**Goal**\nUse CheckpointTracker + save.py; settings persisted.\n\n**Acceptance criteria**\n- [ ] Respawn at last checkpoint\n- [ ] Save survives restart and corrupt file\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "V-09",
+    "milestone": "M2 Vertical Slice",
+    "owner": "P3",
+    "agent": "gameplay",
+    "labels": [
+      "type:feature",
+      "area:ui"
+    ],
+    "title": "[V-09] HUD, pause menu, settings, quality presets",
+    "body": "**Goal**\nOverlay scene; presets Low/Med/High; remap deferred.\n\n**Acceptance criteria**\n- [ ] Presets change render scale/shadows/filters\n- [ ] Settings saved\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "V-10",
+    "milestone": "M2 Vertical Slice",
+    "owner": "P3",
+    "agent": "architect",
+    "labels": [
+      "type:feature",
+      "area:level"
+    ],
+    "title": "[V-10] Ch1 Sleepy Creek blockout",
+    "body": "**Goal**\n3-4 min river with tutorial beats, first hazards and collectibles.\n\n**Acceptance criteria**\n- [ ] Completable in 4 min\n- [ ] Playtested by 2 people\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "V-11",
+    "milestone": "M2 Vertical Slice",
+    "owner": "P2",
+    "agent": "techart",
+    "labels": [
+      "type:art"
+    ],
+    "title": "[V-11] Raft T1 and oars final asset",
+    "body": "**Goal**\nStylised raft + 2 oars + seat slots + buoy sample empties.\n\n**Acceptance criteria**\n- [ ] Passes validator\n- [ ] Provenance rows\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "V-12",
+    "milestone": "M2 Vertical Slice",
+    "owner": "P2",
+    "agent": "techart",
+    "labels": [
+      "type:art",
+      "area:animation"
+    ],
+    "title": "[V-12] Otter character, rig and core animations",
+    "body": "**Goal**\nCH_OtterBase with idle, paddle L/R, panic, celebrate.\n\n**Acceptance criteria**\n- [ ] 25-bone rig\n- [ ] Anims per docs/05 priority P0 done\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "V-13",
+    "milestone": "M2 Vertical Slice",
+    "owner": "P2",
+    "agent": "techart",
+    "labels": [
+      "type:art"
+    ],
+    "title": "[V-13] Environment kit v1 (pines, rocks, banks, reeds)",
+    "body": "**Goal**\nModular, low-poly, shared palette.\n\n**Acceptance criteria**\n- [ ] Ch1 dressed with kit\n- [ ] Draw calls within budget\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "V-14",
+    "milestone": "M2 Vertical Slice",
+    "owner": "P3",
+    "agent": "qa",
+    "labels": [
+      "type:audio"
+    ],
+    "title": "[V-14] Core audio pass v1",
+    "body": "**Goal**\nPaddle, splash, bump, coin, ambience, 1 music loop; aud mixer buses.\n\n**Acceptance criteria**\n- [ ] All P0 audio in AUDIO_LIST.csv integrated\n- [ ] Levels balanced per docs/06\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "V-15",
+    "milestone": "M2 Vertical Slice",
+    "owner": "P3",
+    "agent": "qa",
+    "labels": [
+      "type:qa",
+      "risk:high"
+    ],
+    "title": "[V-15] Vertical slice playtest and performance report",
+    "body": "**Goal**\nRun smoke + manual playtest on both tiers; write report.\n\n**Acceptance criteria**\n- [ ] Report in docs/reports/vs.md\n- [ ] Go/No-go for M3\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "A-01",
+    "milestone": "M3 Alpha",
+    "owner": "P3",
+    "agent": "architect",
+    "labels": [
+      "type:feature",
+      "area:level"
+    ],
+    "title": "[A-01] Ch2 Pine Rapids level",
+    "body": "**Goal**\nFaster flow, rapids sections, branching channels.\n\n**Acceptance criteria**\n- [ ] Completable 5-6 min\n- [ ] Playtested\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "A-02",
+    "milestone": "M3 Alpha",
+    "owner": "P3",
+    "agent": "architect",
+    "labels": [
+      "type:feature",
+      "area:level"
+    ],
+    "title": "[A-02] Ch3 Misty Canyon level",
+    "body": "**Goal**\nNarrow canyon, log gates, fog.\n\n**Acceptance criteria**\n- [ ] Perf within Tier B budget\n- [ ] Playtested\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "A-03",
+    "milestone": "M3 Alpha",
+    "owner": "P1",
+    "agent": "gameplay",
+    "labels": [
+      "type:feature",
+      "area:physics"
+    ],
+    "title": "[A-03] Hazard: whirlpool",
+    "body": "**Goal**\nRadial force + torque; escape by coordinated paddling.\n\n**Acceptance criteria**\n- [ ] Unit-tested force law\n- [ ] Escapable by 2 players\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "A-04",
+    "milestone": "M3 Alpha",
+    "owner": "P1",
+    "agent": "gameplay",
+    "labels": [
+      "type:feature",
+      "area:physics",
+      "risk:high"
+    ],
+    "title": "[A-04] Waterfall drop sequence",
+    "body": "**Goal**\nScripted safe drop with camera shake and splashdown; avoid physics explosion.\n\n**Acceptance criteria**\n- [ ] No stuck/launch bugs in 50 runs\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "A-05",
+    "milestone": "M3 Alpha",
+    "owner": "P1",
+    "agent": "gameplay",
+    "labels": [
+      "type:feature",
+      "area:gameplay"
+    ],
+    "title": "[A-05] AI crew paddlers",
+    "body": "**Goal**\nNPC fills empty oar slots with simple steering policy.\n\n**Acceptance criteria**\n- [ ] Solo player can finish Ch1-3 with crew\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "A-06",
+    "milestone": "M3 Alpha",
+    "owner": "P1",
+    "agent": "gameplay",
+    "labels": [
+      "type:feature",
+      "area:gameplay",
+      "risk:high"
+    ],
+    "title": "[A-06] Local co-op 2-4 players with join/leave",
+    "body": "**Goal**\nDrop-in/out, per-player oar, shared camera.\n\n**Acceptance criteria**\n- [ ] 4 pads work\n- [ ] Join/leave mid-run stable\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "A-07",
+    "milestone": "M3 Alpha",
+    "owner": "P3",
+    "agent": "architect",
+    "labels": [
+      "type:feature"
+    ],
+    "title": "[A-07] Progression: raft upgrades and cosmetics",
+    "body": "**Goal**\nSpend coins; T1->T3; hats etc.\n\n**Acceptance criteria**\n- [ ] Saved in save.py\n- [ ] UI flow works\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "A-08",
+    "milestone": "M3 Alpha",
+    "owner": "P2",
+    "agent": "techart",
+    "labels": [
+      "type:art",
+      "area:animation"
+    ],
+    "title": "[A-08] NPC characters and animations (bear, beaver, heron)",
+    "body": "**Goal**\nAmbient + event NPCs.\n\n**Acceptance criteria**\n- [ ] Per docs/05 P1 list\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "A-09",
+    "milestone": "M3 Alpha",
+    "owner": "P3",
+    "agent": "gameplay",
+    "labels": [
+      "type:feature",
+      "type:audio"
+    ],
+    "title": "[A-09] Adaptive music system",
+    "body": "**Goal**\nStem crossfade by danger/calm states.\n\n**Acceptance criteria**\n- [ ] No audible pops\n- [ ] State machine tested\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "A-10",
+    "milestone": "M3 Alpha",
+    "owner": "P2",
+    "agent": "techart",
+    "labels": [
+      "type:art"
+    ],
+    "title": "[A-10] VFX set v1",
+    "body": "**Goal**\nSplash, wake, foam, sparkle, dust.\n\n**Acceptance criteria**\n- [ ] Each effect < 200 particles\n- [ ] fps cost measured\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "A-11",
+    "milestone": "M3 Alpha",
+    "owner": "P3",
+    "agent": "docs",
+    "labels": [
+      "type:feature"
+    ],
+    "title": "[A-11] Localization EN/ID",
+    "body": "**Goal**\nString tables + font coverage.\n\n**Acceptance criteria**\n- [ ] Language switch at runtime\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "A-12",
+    "milestone": "M3 Alpha",
+    "owner": "P2",
+    "agent": "techart",
+    "labels": [
+      "type:art"
+    ],
+    "title": "[A-12] Asset pass 2: remaining props and set dressing",
+    "body": "**Goal**\nEverything in ASSET_LIST.csv marked phase 3.\n\n**Acceptance criteria**\n- [ ] All validated\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "A-13",
+    "milestone": "M3 Alpha",
+    "owner": "P3",
+    "agent": "architect",
+    "labels": [
+      "type:feature",
+      "area:ui"
+    ],
+    "title": "[A-13] Interactive tutorial",
+    "body": "**Goal**\nTeach paddle, steer, avoid, cooperate.\n\n**Acceptance criteria**\n- [ ] New players pass tutorial in 3 min (3 testers)\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "B-01",
+    "milestone": "M4 Beta",
+    "owner": "P3",
+    "agent": "architect",
+    "labels": [
+      "type:feature",
+      "area:level"
+    ],
+    "title": "[B-01] Ch4 Lantern Lagoon (night)",
+    "body": "**Goal**\nLighting-heavy; fireflies; calm.\n\n**Acceptance criteria**\n- [ ] Tier B >= 30 fps\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "B-02",
+    "milestone": "M4 Beta",
+    "owner": "P3",
+    "agent": "architect",
+    "labels": [
+      "type:feature",
+      "area:level"
+    ],
+    "title": "[B-02] Ch5 Thunder Falls (finale)",
+    "body": "**Goal**\nLongest chapter, all hazards, big waterfall.\n\n**Acceptance criteria**\n- [ ] Completable 7-8 min\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "B-03",
+    "milestone": "M4 Beta",
+    "owner": "P1",
+    "agent": "gameplay",
+    "labels": [
+      "type:feature",
+      "area:tools"
+    ],
+    "title": "[B-03] Performance optimisation pass",
+    "body": "**Goal**\nLODs, pooling, fast AddObject, shadow/filter budgets.\n\n**Acceptance criteria**\n- [ ] Budgets met on both tiers\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "B-04",
+    "milestone": "M4 Beta",
+    "owner": "P3",
+    "agent": "gameplay",
+    "labels": [
+      "type:feature",
+      "area:ui"
+    ],
+    "title": "[B-04] Accessibility and input remap",
+    "body": "**Goal**\nAssist modes, remap, colour-blind-safe cues, subtitles for cues.\n\n**Acceptance criteria**\n- [ ] Checklist in docs/13 passed\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "B-05",
+    "milestone": "M4 Beta",
+    "owner": "P3",
+    "agent": "qa",
+    "labels": [
+      "type:qa"
+    ],
+    "title": "[B-05] Balance and difficulty tuning",
+    "body": "**Goal**\nData-driven difficulty; playtest telemetry via local logs.\n\n**Acceptance criteria**\n- [ ] Target completion rates met\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "B-06",
+    "milestone": "M4 Beta",
+    "owner": "P3",
+    "agent": "qa",
+    "labels": [
+      "type:audio"
+    ],
+    "title": "[B-06] Full audio mix and master",
+    "body": "**Goal**\nBus levels, ducking, loudness targets.\n\n**Acceptance criteria**\n- [ ] Loudness targets per docs/06\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "B-07",
+    "milestone": "M4 Beta",
+    "owner": "P2",
+    "agent": "techart",
+    "labels": [
+      "type:art"
+    ],
+    "title": "[B-07] Intro cinematic and credits",
+    "body": "**Goal**\n30-45 s in-engine cinematic.\n\n**Acceptance criteria**\n- [ ] Skippable\n- [ ] Stable fps\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "B-08",
+    "milestone": "M4 Beta",
+    "owner": "P1",
+    "agent": "builder",
+    "labels": [
+      "type:infra"
+    ],
+    "title": "[B-08] Logging and crash diagnostics (local only)",
+    "body": "**Goal**\nRotating logs + diagnostic bundle button; no network telemetry.\n\n**Acceptance criteria**\n- [ ] Bundle contains logs, settings, hw info\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "B-09",
+    "milestone": "M4 Beta",
+    "owner": "P3",
+    "agent": "qa",
+    "labels": [
+      "type:qa",
+      "risk:high"
+    ],
+    "title": "[B-09] Bug bash and regression suite",
+    "body": "**Goal**\nFull playthrough both tiers; triage.\n\n**Acceptance criteria**\n- [ ] No open S1/S2 bugs\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "R-01",
+    "milestone": "M5 Release",
+    "owner": "P1",
+    "agent": "release",
+    "labels": [
+      "type:qa",
+      "area:release",
+      "risk:high"
+    ],
+    "title": "[R-01] Release candidate build and clean-install test",
+    "body": "**Goal**\nBuild + install on both laptops + one extra clean machine.\n\n**Acceptance criteria**\n- [ ] RC passes release checklist\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "R-02",
+    "milestone": "M5 Release",
+    "owner": "P1",
+    "agent": "security",
+    "labels": [
+      "type:qa",
+      "area:release"
+    ],
+    "title": "[R-02] Licence, provenance and security audit",
+    "body": "**Goal**\nAudit PROVENANCE.csv, deps, secrets, MCP config.\n\n**Acceptance criteria**\n- [ ] Zero unlicensed assets\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "R-03",
+    "milestone": "M5 Release",
+    "owner": "P3",
+    "agent": "docs",
+    "labels": [
+      "type:docs",
+      "area:release"
+    ],
+    "title": "[R-03] Store page assets: screenshots, trailer, description",
+    "body": "**Goal**\nCapture from engine.\n\n**Acceptance criteria**\n- [ ] Assets delivered\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "R-04",
+    "milestone": "M5 Release",
+    "owner": "P1",
+    "agent": "release",
+    "labels": [
+      "type:infra",
+      "area:release"
+    ],
+    "title": "[R-04] Release notes, tag and publish",
+    "body": "**Goal**\nTag vX.Y.Z; upload build.\n\n**Acceptance criteria**\n- [ ] Tag exists; notes published\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  },
+  {
+    "id": "R-05",
+    "milestone": "M5 Release",
+    "owner": "P1",
+    "agent": "architect",
+    "labels": [
+      "type:spike"
+    ],
+    "title": "[R-05] Post-release plan and online co-op spike",
+    "body": "**Goal**\nEvaluate host-authoritative online co-op feasibility.\n\n**Acceptance criteria**\n- [ ] Written proposal\n\nSee `docs/10_PHASE_PROMPTS.md` for the matching prompt and `docs/09_MODEL_ROUTING_AND_REASONING.md` for model/effort."
+  }
+]
