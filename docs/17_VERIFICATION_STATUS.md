@@ -15,7 +15,7 @@ Last automated run: 2026-10-23 (Linux sandbox, Python 3.12, OpenCode 1.19.4). No
 ## 2. NOT verified (do not assume)
 - Every `bge.*` / `bpy` call in `src/rr/glue`, `game/rr_components.py`, `tools/blender/*`, `tools/run_game.py` (marked VERIFY).
 - Raft feel, buoyancy coupling with Bullet, performance on any laptop.
-- Blender MCP with UPBGE (S-04), env var names for `mcp-for-blender`.
+- Blender MCP with UPBGE (S-04): addon installs and registers in UPBGE 0.50, env var names confirmed for `mcp-for-blender` 2.2.4 (2026-10-24); the MCP socket round-trip (create/delete cube from OpenCode) is still unverified.
 - Real bootstrap (repo creation, branch protection on a private free repo, LFS quota), CI run on GitHub.
 - Models `Greg/*` and whether the gateway honours `reasoningEffort`.
 - Physics targets only paper-checked (`docs/07` section 11).
