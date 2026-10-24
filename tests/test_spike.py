@@ -9,8 +9,8 @@ class NormalizeTests(unittest.TestCase):
         self.assertEqual(normalize(" PASS "), "pass")
         self.assertEqual(normalize("fail"), "fail")
         self.assertEqual(normalize("skip"), "skip")
-        self.assertEqual(normalize("maybe"), "skip")
-        self.assertEqual(normalize(None), "skip")
+        self.assertEqual(normalize("maybe"), "")
+        self.assertEqual(normalize(None), "")
 
 
 class SummarizeTests(unittest.TestCase):
@@ -34,6 +34,14 @@ class SummarizeTests(unittest.TestCase):
         res = summarize(checks)
         self.assertTrue(res["ok"])
         self.assertEqual(res["skipped"], ["overlay"])
+
+    def test_unknown_status_blocks(self):
+        checks = {name: "pass" for name in CHECKS}
+        checks["aud_play"] = "error"
+        res = summarize(checks)
+        self.assertFalse(res["ok"])
+        self.assertEqual(res["missing"], ["aud_play"])
+        self.assertEqual(res["passed"].count("aud_play"), 0)
 
     def test_missing_check_blocks(self):
         checks = {name: "pass" for name in CHECKS if name != "fps"}

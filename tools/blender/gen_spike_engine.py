@@ -26,6 +26,7 @@ import sys
 import bpy
 from mathutils import Vector
 
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 COMPONENT = "rr_components.SpikeProbe"
 HUD_COLLECTION = "SpikeHud"
 
@@ -104,14 +105,16 @@ def add_animated_cube() -> bpy.types.Object:
     anim = add_cube("SpikeAnim", (0.6, 0.6, 0.6), (2.0, 0.0, 1.0))
     add_material(anim, "MT_SpikeAnim", (0.3, 0.6, 0.8, 1.0))
     anim.game.physics_type = "NO_COLLISION"
+    scene = bpy.context.scene
+    # frame_set first: it re-evaluates the action and would overwrite the value we
+    # are about to key, leaving a flat action.
+    scene.frame_set(1)
     anim.location.z = 1.0
-    bpy.context.scene.frame_set(1)
     anim.keyframe_insert(data_path="location", frame=1)
+    scene.frame_set(20)
     anim.location.z = 2.0
-    bpy.context.scene.frame_set(20)
     anim.keyframe_insert(data_path="location", frame=20)
-    anim.location.z = 1.0
-    bpy.context.scene.frame_set(1)
+    scene.frame_set(1)
     if anim.animation_data and anim.animation_data.action:
         anim.animation_data.action.name = "SpikeBounce"
     return anim
@@ -167,6 +170,11 @@ def attach_component(obj: bpy.types.Object, component: str) -> bool:
 
 
 def build(args: argparse.Namespace) -> bool:
+    # The component module lives in game/; make it importable for the register operator.
+    game_dir = os.path.join(ROOT, "game")
+    if game_dir not in sys.path:
+        sys.path.insert(0, game_dir)
+
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
     scene.name = "SpikeEngine"

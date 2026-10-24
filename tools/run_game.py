@@ -42,7 +42,9 @@ def main() -> int:
 
     env = os.environ.copy()
     # Python Components live in game/rr_components.py and import rr.* from src/.
-    # blender/blenderplayer must see both, independent of the current directory.
+    # VERIFY: blenderplayer/Blender may ignore PYTHONPATH unless started with
+    # --python-use-system-env; this is a best-effort hint, and the generator also
+    # inserts game/ on sys.path when registering the component.
     root = Path(__file__).resolve().parent.parent
     env["PYTHONPATH"] = os.pathsep.join(
         [str(root / "game"), str(root / "src"), env.get("PYTHONPATH", "")]).strip(os.pathsep)
