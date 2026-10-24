@@ -1,0 +1,31 @@
+{
+  "generated_by": "tools/bench/make_baseline_scenes.py",
+  "engine": "UPBGE 5.0.1",
+  "triangle_counting": "sum(len(polygon.vertices) - 2) after bmesh triangulation",
+  "component_module": "rr_components.BenchRecorder",
+  "frame_rate_cap": "use_frame_rate=True, vsync=ON (pinned in the generator)",
+  "template": null,
+  "scenes": [
+    {
+      "label": "empty",
+      "file": "empty.blend",
+      "triangles": 0,
+      "grid_segments": 0,
+      "sun_casts_shadows": false
+    },
+    {
+      "label": "100k",
+      "file": "bench100k.blend",
+      "triangles": 100352,
+      "grid_segments": 224,
+      "sun_casts_shadows": false
+    },
+    {
+      "label": "250k",
+      "file": "bench250k_shadow.blend",
+      "triangles": 250632,
+      "grid_segments": 354,
+      "sun_casts_shadows": true
+    }
+  ]
+}
