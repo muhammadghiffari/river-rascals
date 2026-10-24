@@ -282,6 +282,106 @@ matrix, and it would mean rewriting `rr.glue.audio` for that build.
 - `blenderplayer` shows no console on Windows by default. If no JSON appears, run the `--editor`
   variant (§2.4) or start the game from the UI and read the System Console.
 
+### 6.7 Windows startup context and data-API generator repair
+
+**User-observed evidence (Windows UPBGE 0.50 / Blender 5.0.1):**
+
+- Windowed `blender.exe --python gen_spike_engine.py` failed in `add_cube()` with
+  `Context has no attribute active_object`; changing that lookup to `object` also failed.
+- A separate windowed probe found `window`, `screen`, `scene`, `view_layer`,
+  `active_object` and `object` populated both at script start and after a 1 s timer.
+- The old generator called `bpy.ops.wm.read_factory_settings(use_empty=True)` at line 185,
+  before object creation at line 196. Add-ons unregistered/registered and the log reported
+  `LogicNodeTree already registered` before the traceback.
+- The old headless generator with `--no-components` succeeded, saved a scene and printed
+  `[gen] COMPONENTS: MANUAL`.
+
+**Assessment:** these observations support context invalidation by the mid-script factory
+reset, rather than a missing context at launch. They do **not** isolate the reset as the
+root cause; a before/after windowed reproduction is still **VERIFY**. The `object` lookup
+substitution was not a verified fix. This checkout had no uncommitted edits when the
+requested `~/gen_spike_local.patch` was saved (empty patch).
+
+**Repair:** no factory reload or object-creation operators. Data-API cleanup removes objects,
+mesh/camera/light/curve/material/action datablocks and extra collections, retaining the current
+scene and its master collection. Objects link directly to `SpikeEngine` or `SpikeHud`; box
+vertices carry final dimensions and object scales remain one. Timing (60 fps, base 1,
+frames 1–120), unit scale 1, Bullet and gravity 9.81 are explicit. No quality presets,
+resolution/render scale, tier targets or budgets changed; graphics settings are inherited.
+Only component registration, saving and quitting still use operators. Component selection uses
+`view_layer.objects.active` and `select_set`; `--no-components` and the background-registration
+refusal (unless `--allow-background-components`) remain intact.
+
+**Agent-run validation (2026-10-24, Windows PowerShell):** the requested WSL/Lenovo installation
+paths are absent on this machine. Used the local UPBGE 0.50 at `$env:UPBGE_PATH` instead;
+the WSL/`wslpath -w` invocation remains **VERIFY**. No `.blend` was saved into the repo.
+
+```powershell
+& "$env:UPBGE_PATH\blender.exe" -b --python-exit-code 1 --python tools/blender/gen_spike_engine.py -- --out "$env:LOCALAPPDATA\Temp\opencode\spike_test.blend" --no-components
+# Separate process: read-only inventory/assertions (temporary validation script, not a repo tool).
+& "$env:UPBGE_PATH\blender.exe" -b "$env:LOCALAPPDATA\Temp\opencode\spike_test.blend" --python-exit-code 1 --python "$env:LOCALAPPDATA\Temp\opencode\inspect_spike.py"
+```
+
+Both exited 0. Generator output (absolute output path abbreviated):
+
+```text
+Blender 5.0.1 (hash 9fcf0da621c3 built 2026-01-03 20:19:37)
+[gen] components skipped (--no-components)
+Info: Saved as "spike_test.blend"
+[gen] scene: SpikeGround, SpikeBox, SpikeAnim(SpikeBounce), SpikeCam, SpikeSun, SpikeProbeRoot, SpikeHud/SpikeHudCam+SpikeHudLabel
+[gen] COMPONENTS: MANUAL
+```
+
+Saved-file inventory from the second process (not just the generator's printed list):
+
+| Object | Type | Collection | Location | Mesh dimensions |
+|---|---|---|---|---|
+| SpikeGround | MESH | SpikeEngine | (0, 0, -0.1) | (20, 20, 0.2) |
+| SpikeBox | MESH | SpikeEngine | (0, 0, 3) | (1, 1, 1) |
+| SpikeAnim | MESH | SpikeEngine | (2, 0, 1) | (0.6, 0.6, 0.6) |
+| SpikeCam | CAMERA | SpikeEngine | (9, -9, 6) | — |
+| SpikeSun | LIGHT | SpikeEngine | (4, -4, 8) | — |
+| SpikeProbeRoot | EMPTY | SpikeEngine | (0, 0, 0) | — |
+| SpikeHudCam | CAMERA | SpikeHud | (0, 0, 10) | — |
+| SpikeHudLabel | FONT | SpikeHud | (-3, -0.5, 0) | — |
+
+Assertions passed: exactly eight objects/two collections; unit object scales; outward box
+faces; three material assignments; stored physics/mass/collision settings; active camera,
+sun and HUD settings; `SpikeBounce` z=1 at frame 1 and z=2 at frame 20; explicit timing,
+gravity and unit scale; zero components (expected with `--no-components`). This checks
+construction and stored data, **not gameplay**.
+
+Regression checks in `tests/test_spike_generator.py` cover the operator allowlist, baked
+box dimensions/winding and explicit non-graphics settings. The settings test initially failed
+on inherited `fps_base=1.001` and passed after the repair. Engine imports are stubbed for these
+unit tests; they do not establish UPBGE compatibility.
+
+- `ruff check src tests tools scripts game` → `All checks passed!`
+- `python -m compileall -q src tools game` → exit 0.
+- `python -m unittest discover -s tests` → 47 tests, `OK (skipped=1)`.
+
+**Manual windowed test — VERIFY until the owner reports output:** from the repo root, launch
+a **new** UPBGE process, never run this generator in a session with unsaved work:
+
+```powershell
+& "$env:UPBGE_PATH\blender.exe" --python-exit-code 1 --python tools/blender/gen_spike_engine.py -- --out "$env:LOCALAPPDATA\Temp\opencode\spike_windowed.blend" --keep-open
+```
+
+Success requires `[gen] COMPONENTS: ATTACHED`, a saved-file message and `SpikeProbe` listed
+on `SpikeProbeRoot`. `MANUAL` or `COMPONENT FAILED` means attachment was **not** verified.
+If registration crashes, regenerate with `-b ... --no-components` (as above); attach
+`rr_components.SpikeProbe` by hand per §6.2 and save only the temporary file. For reopening
+temporary files, make `game/` and `src/` importable first (they are not beside that `.blend`):
+
+```powershell
+$env:PYTHONPATH = "$((Resolve-Path game).Path);$((Resolve-Path src).Path);$env:PYTHONPATH"
+& "$env:UPBGE_PATH\blender.exe" "$env:LOCALAPPDATA\Temp\opencode\spike_test.blend"
+```
+
+Windowed generation/registration, manual attachment, runtime probe checks and the WSL
+command have **not** been run by this agent. None of the S-01 feature-matrix cells is closed
+by this headless validation. No commit/push is authorized by these instructions.
+
 ---
 
 ## 7. Decision rules and provisional recommendation
