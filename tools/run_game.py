@@ -41,6 +41,11 @@ def main() -> int:
     a = ap.parse_args()
 
     env = os.environ.copy()
+    # Python Components live in game/rr_components.py and import rr.* from src/.
+    # blender/blenderplayer must see both, independent of the current directory.
+    root = Path(__file__).resolve().parent.parent
+    env["PYTHONPATH"] = os.pathsep.join(
+        [str(root / "game"), str(root / "src"), env.get("PYTHONPATH", "")]).strip(os.pathsep)
     out = Path("smoke_result.json")
     if a.smoke:
         env.update(RR_SMOKE="1", RR_SMOKE_SECONDS=str(a.seconds), RR_SMOKE_OUT=str(out))
