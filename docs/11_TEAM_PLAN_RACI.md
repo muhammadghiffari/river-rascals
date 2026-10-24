@@ -13,7 +13,13 @@ Everyone: reviews at least 2 PRs/week (human sanity check on top of `@reviewer`)
 - **Mid-spec laptop (P3)**: **the performance truth**. Every milestone must pass here. Fill `16_HARDWARE_PROFILES.md` in week 1.
 - **P1 machine**: coding + physics tuning; must also run smoke tests.
 
-## 3. RACI (R=does, A=accountable, C=consulted, I=informed)
+## 3. Working tools (both acceptable)
+Any agent role in `docs/09` may be run through **OpenCode or Hermes**; both are acceptable clients and neither is
+required. What matters is the *model* and the review rule in §6, not the client. Personal client settings
+(credentials, private model/agent wiring) stay local and uncommitted; the shared repo-level `opencode.json`, when
+present, is P1-owned per §9 and is not a review target for unrelated doc/design PRs.
+
+## 4. RACI (R=does, A=accountable, C=consulted, I=informed)
 | Area | P1 | P2 | P3 |
 |---|---|---|---|
 | Repo, CI, branching, releases | **A/R** | I | C |
@@ -29,14 +35,78 @@ Everyone: reviews at least 2 PRs/week (human sanity check on top of `@reviewer`)
 | Security & licence audit | **A/R** | C | C |
 | Cost tracking of model usage | **A/R** | I | I |
 
-## 4. Weekly cadence (suggested)
-Mon 20 min planning (R3 prompt) · daily async handoff notes (R1) · Wed mid-week sync 15 min (blockers) · **Fri playtest + build** (P3 runs smoke + notes) · Sat/Sun buffer. Demo video every 2 weeks to keep motivation high.
+## 5. Weekly cadence (agreed)
+One fixed weekly rhythm from M0 onward. Times are team-local; if a slot has to move, move it within the same week —
+do not skip it. Sat/Sun stay free (see §12).
 
-## 5. Project board & flow
-GitHub Project columns: **Backlog → Ready (agent-ready) → In progress → In review → Done**. Issue labels: `type:*`, `area:*`, `owner:P1/P2/P3`, `risk:high`, `blocked`, `agent-ready`. WIP limit: max 2 in progress per person. An issue is **Ready** only with goal + acceptance criteria + suggested agent.
-Workflow: pick issue → branch → agent does work → local tests → PR → `@reviewer` + human review → CI green → squash merge → close issue → note in handoff.
+| Day | Slot | Activity | Owner | Output |
+|---|---|---|---|---|
+| Mon | 20 min | **Weekly sync / planning** (R3 prompt) | P1 runs, all attend | board: Ready column filled, ≤ 3 items per person, risks + cut candidates named |
+| Wed | 15 min | **Mid-week sync** — blockers only, no status theatre | P1 | blocker issues labelled `blocked`, decision or escalation |
+| Fri | 20 min | **Review sweep** — close the review rotation (§6), merge green PRs | rotation reviewer | PRs merged or sent back with a reason |
+| Fri | 45 min | **Weekly playtest + build** (see below) | P3 runs, all play | `docs/reports/playtest_YYYY-MM-DD.md`, issues for bugs, fps table on Tier B |
+| daily | async | Handoff note (R1) on the active issue | whoever worked last | 10 lines: changed / in progress / decisions / blockers / next 3 |
+| every 2 wk | 10 min | Demo video + milestone burndown check | P1 | link posted in chat |
 
-## 6. Timeline (20 weeks) and who does what
+**Weekly playtest rules**
+1. **One playtest per week** from M1 onward, even when the build is rough — a blockout with placeholders counts, a
+   missing playtest does not.
+2. The playtest needs only: a build that boots, the checklist from `docs/02 §16`, 20–30 minutes, and notes written
+   down the same day. No polish required.
+3. **P3's mid-spec laptop is the performance truth** — the fps table in the notes comes from there, not from P2's
+   ASUS V16.
+4. If Friday is impossible, move the playtest to Thursday of the same week; never skip two weeks in a row.
+5. Every bug found becomes an issue a human can reproduce (build + steps + expected/actual), not a chat message.
+
+## 6. PR review: rotation and model-family rule
+**Human rotation** (every PR, no exceptions — the agent `@reviewer` is *additional*, not a substitute):
+
+| PR author | Required human reviewer |
+|---|---|
+| P1 | P3 |
+| P2 | P1 |
+| P3 | P2 |
+
+So P1 reviews P2's PRs, P2 reviews P3's, P3 reviews P1's. Each person is therefore both author and reviewer in the
+cycle, which keeps review load even at ~2 PRs/week/person. If the rotating reviewer is unavailable for more than
+24 h, the third person reviews rather than letting the PR stall — note the substitution in the PR.
+
+**AI-authored PRs** (`risk:high` included):
+1. **A PR written by an AI model must be reviewed by a different model family than the author.** DeepSeek-written
+   work is reviewed by a Kimi or GLM/Claude-class model, Kimi-written work by DeepSeek/GLM, and so on — see
+   `docs/09 §3`, rule 3. Same-family self-review does not count, however green CI is.
+2. Every AI PR body must state **author model + reviewer model + client** (OpenCode or Hermes), plus what was run
+   and what is marked `VERIFY`.
+3. The human in rotation still reviews it. Model review catches layering/tests; humans catch "is this the game we
+   wanted".
+4. `risk:high` PRs (physics core, save format, build/release, MCP config, co-op) additionally get `security` or
+   `architect` review before merge.
+
+## 7. Project board, Definition of Ready & flow
+Board: **River Rascals** — https://github.com/users/muhammadghiffari/projects/2 (owner `muhammadghiffari`).
+Columns, in order: **Backlog → Ready → In progress → In review → Done**. Every open issue is on the board in
+`Backlog` by default; moving a card is the only status anyone needs to check.
+Labels: `type:*`, `area:*`, `owner:P1/P2/P3`, `risk:high`, `blocked`, `agent-ready`. WIP limit: **max 2 cards in
+progress per person** (a card is in progress once its branch exists).
+
+### Definition of Ready (DoR)
+An issue may move **Backlog → Ready** only when all of these are true:
+- [ ] **Goal** in one sentence, and it is worth doing now (not "nice to have").
+- [ ] **Context** links: the doc section (`docs/…§…`) and any related issue/PR.
+- [ ] **Acceptance criteria** as checkboxes that a reviewer can verify — no "works well".
+- [ ] **Out of scope** stated, so the assignee does not wander.
+- [ ] **Suggested agent + effort** from `docs/09`, and a human **owner** (`owner:P1/P2/P3`).
+- [ ] **Sized to ≤ ~1 day** of agent work; larger issues are split first (R6 prompt).
+- [ ] **Dependencies** resolved, or the issue labelled `blocked` with the blocker named.
+- [ ] **No open human decision** (scope, cost, licence, art direction) left inside the task.
+- [ ] `risk:high` issues name the **reviewer** required in §6.
+An agent must not start work on a card that is still in Backlog; promoting it to Ready is the human's commit that
+the task is specified. If a card turns out under-specified mid-work, stop and report rather than inventing scope.
+
+Workflow: pick Ready issue → branch → agent does work → local tests → PR → `@reviewer` (different model family) +
+human in rotation → CI green → squash merge → close issue → note in handoff.
+
+## 8. Timeline (20 weeks) and who does what
 | Wk | Milestone | P1 | P2 | P3 |
 |---|---|---|---|---|
 | 1 | M0 | F-01/02/03/06 repo, CI, onboarding | F-04 UPBGE + MCP smoke | F-05 hardware profile + baselines |
@@ -53,7 +123,7 @@ Workflow: pick issue → branch → agent does work → local tests → PR → `
 | 20 | M5 | R-04 release | | |
 **Cut order if late**: stretch → Ch4/Ch5 polish → extra cosmetics → AI crew sophistication → never cut core raft feel, stability, checkpoints/save.
 
-## 7. Ownership map (merge-conflict avoidance)
+## 9. Ownership map (merge-conflict avoidance)
 | Path | Owner |
 |---|---|
 | `src/`, `tests/`, `tools/`(non-blender), `scripts/`, `.github/`, `opencode.json`, `docs/03,07,08,09,12` | P1 |
@@ -62,11 +132,12 @@ Workflow: pick issue → branch → agent does work → local tests → PR → `
 | `game/*.blend` | one person at a time via `git lfs lock`; level `.blend` = P3, `main.blend`/`hud.blend` = P1/P3 coordinate in chat |
 Cross-area edits: open an issue/PR and tag the owner.
 
-## 8. Communication
+## 10. Communication
 One chat group (Discord/WhatsApp), GitHub issues for decisions, `docs/` for durable knowledge, handoff notes (R1). Decisions that change scope/cost go to the decision log in `03 §15`.
 
-## 9. Definition of Done (team)
-Acceptance met · tests/smoke evidence · docs updated · PR reviewed by agent + human · merged green · issue closed with a one-line outcome.
+## 11. Definition of Done (team)
+Acceptance met · tests/smoke evidence · docs updated · PR reviewed by `@reviewer` of a **different model family** than
+the author and by the human in the §6 rotation · merged green · issue closed with a one-line outcome.
 
-## 10. Wellbeing/workload guardrails
+## 12. Wellbeing/workload guardrails
 Cap ~10–15 h/week/person; no crunch weeks; if two consecutive weeks slip, re-plan (R3) instead of pushing harder.
