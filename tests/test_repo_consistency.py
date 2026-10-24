@@ -100,6 +100,12 @@ class CheckEnvTests(unittest.TestCase):
         self.assertIsNone(ce.ver(["definitely-not-a-real-command-xyz"]))
         self.assertTrue(ce.ver([sys.executable, "--version"]).startswith("Python"))
 
+    def test_resolves_bare_name_through_path(self):
+        # Windows npm shims are .cmd files; ver() must go through shutil.which to find them.
+        ce = _load("scripts/check_env.py", "ce")
+        name = "cmd" if sys.platform == "win32" else "sh"
+        self.assertIsNotNone(ce.ver([name, "-c", "exit 0"]))
+
 
 if __name__ == "__main__":
     unittest.main()
