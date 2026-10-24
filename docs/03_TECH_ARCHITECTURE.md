@@ -7,12 +7,27 @@
 4. **Observable**: structured logs, smoke test, debug overlays.
 5. **Conflict-resistant repo**: many small `.blend` files, one owner at a time, LFS locks.
 
-## 2. Engine & version pinning (decision pending spike S-01)
+## 2. Engine & version pinning (provisional until spike S-01)
 Facts gathered at handover time: UPBGE **0.50** is built on **Blender 5.0.1** (released January 2026; adds experimental GPU skinning, fast AddObject via dupli-base, 2D filter refactor). The previous stable line was UPBGE 0.44 (Blender 4.4.x), and 0.36 (Blender 3.6). UPBGE is a community fork with a small contributor base.
-**Recommendation**: evaluate 0.50 first (newest features, long-term support) and keep 0.44.x as the fallback. Pick **one** version for all three machines; record version, URL and SHA-256 here after S-01:
+**Recommendation**: evaluate 0.50 first (newest features, long-term support) and keep 0.44.x as the fallback. Pick **one** version for all three machines; record version, URL and SHA-256 here after S-01.
+
+Pinned build — Windows x64:
 ```
-UPBGE version: ____   Blender base: ____   URL: ____   SHA256: ____   Decided: ____ by ____
+upbge 0.50 (Blender 5.0.1)
+file:   upbge-0.50-windows-x64.7z
+size:   293316768 bytes
+URL:    https://github.com/UPBGE/upbge/releases/download/v0.50/upbge-0.50-windows-x64.7z
+SHA256: c59198cbe361afa9d78f515751d2a34f3df236f137393111fd8cc4b43e1dce71
 ```
+Pinned build — Linux x64:
+```
+upbge 0.50 (Blender 5.0.1)
+file:   upbge-0.50-linux-x64.tar.xz (by naming pattern; P3 to confirm)
+URL:    https://github.com/UPBGE/upbge/releases/download/v0.50/upbge-0.50-linux-x64.tar.xz
+SHA256: 21d535641cbab1751766737cd9958bae120cd161cf7f0c86f5d5df6dca868314
+```
+Decided **2026-10-24** by P1, provisional until S-01 passes on all tiers (Windows hash verified on 2 machines: P1, P2; Linux hash verified on 1 machine: P3).
+Pin by SHA-256 because release assets can be replaced after publishing.
 Never upgrade the pinned engine without a PR that re-runs smoke tests on both hardware tiers.
 **Re-checked 2026-10-23**: 0.50 (Blender 5.0.1, Jan 2026) is still the latest *stable* release. The UPBGE repo also publishes automated **weekly alpha** builds (0.52/0.53 Alpha at the time of writing) — these are pre-releases and must **not** be pinned. Pin by release URL + SHA-256, not by "latest".
 
