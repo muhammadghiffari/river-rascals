@@ -120,25 +120,27 @@ class SpikeProbe(bge.types.KX_PythonComponent):
         obj = self._object("SpikeAnim")
         if not obj:
             return SKIP, "no SpikeAnim in scene"
+        # The positional form is the API contract; keyword support is recorded but
+        # must not decide the feature (bge methods need not accept keywords).
         obj.playAction("SpikeBounce", 1, 20, 0, 0, 0,
                        bge.logic.KX_ACTION_MODE_LOOP, 0.0, 0, 1.0,
                        bge.logic.KX_ACTION_BLEND_BLEND)
         name = obj.getActionName(0)
         playing = obj.isPlayingAction(0)
         obj.stopAction(0)
-        keyword_ok = False
+        keyword = "no"
         try:
             obj.playAction(name="SpikeBounce", start_frame=1, end_frame=20,
                            play_mode=bge.logic.KX_ACTION_MODE_PLAY,
                            blend_mode=bge.logic.KX_ACTION_BLEND_BLEND, speed=1.0)
-            keyword_ok = obj.isPlayingAction(0)
+            keyword = "yes"
             obj.stopAction(0)
         except TypeError as exc:
-            self._note("play_action", "keyword form rejected: %s" % exc)
-        note = "positional=%s name=%s playing=%s keyword=%s" % (
-            "ok", name, playing, keyword_ok)
+            keyword = "rejected (%s)" % exc
+        self._note("play_action", "keyword form: %s" % keyword)
+        note = "positional ok; name=%r playing=%s; keywords=%s" % (name, playing, keyword)
         positional_ok = name == "SpikeBounce" and bool(playing)
-        return (PASS if positional_ok and keyword_ok else FAIL), note
+        return (PASS if positional_ok else FAIL), note
 
     def _probe_filter2d(self):
         manager = self.scene.filterManager
@@ -151,7 +153,10 @@ class SpikeProbe(bge.types.KX_PythonComponent):
         return (PASS if added and removed else FAIL), note
 
     def _probe_overlay(self):
-        import bpy  # noqa: PLC0415 - runtime only; module import must stay light
+        try:
+            import bpy  # noqa: PLC0415 - runtime only; module import must stay light
+        except ImportError as exc:
+            return SKIP, "bpy unavailable in this launcher (%s)" % exc
 
         collection = bpy.data.collections.get("SpikeHud")
         camera = self._object("SpikeHudCam")
@@ -245,11 +250,19 @@ class SpikeProbe(bge.types.KX_PythonComponent):
 
     def _version(self):
         app = getattr(bge, "app", None)
-        for attr in ("version", "version_string"):
-            value = getattr(app, attr, None) if app else None
-            if isinstance(value, str):
-                return value
-        return "?"
+
+        def first(*names):
+            for name in names:
+                value = getattr(app, name, None) if app else None
+                if isinstance(value, str):
+                    return value
+            return None
+
+        upbge = first("upbge_version_string", "upbge_version")
+        blender = first("version_string", "version")
+        if upbge and blender:
+            return "%s (Blender %s)" % (upbge, blender)
+        return upbge or blender or "?"
 
     def _window(self):
         try:

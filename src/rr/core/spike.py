@@ -27,21 +27,22 @@ CHECKS = (
 
 
 def normalize(status: object) -> str:
-    """Map a raw probe status to pass/fail/skip (unknown -> skip)."""
+    """Map a raw probe status to pass/fail/skip; anything else returns ""."""
     text = str(status).strip().lower()
-    return text if text in (PASS, FAIL, SKIP) else SKIP
+    return text if text in (PASS, FAIL, SKIP) else ""
 
 
 def summarize(checks: dict[str, str]) -> dict[str, object]:
     """Grade a probe result set.
 
-    ``ok`` is False when any check failed or was never reported, so a truncated
-    run cannot masquerade as a pass.
+    ``ok`` is False when any check failed, was never reported, or reported an
+    unknown status, so a truncated or garbled run cannot masquerade as a pass.
     """
-    passed = [name for name in CHECKS if normalize(checks.get(name, SKIP)) == PASS]
-    failed = [name for name in CHECKS if normalize(checks.get(name, SKIP)) == FAIL]
-    skipped = [name for name in CHECKS if normalize(checks.get(name, SKIP)) == SKIP]
-    missing = [name for name in CHECKS if name not in checks]
+    status = {name: normalize(checks.get(name)) for name in CHECKS}
+    passed = [name for name in CHECKS if status[name] == PASS]
+    failed = [name for name in CHECKS if status[name] == FAIL]
+    skipped = [name for name in CHECKS if status[name] == SKIP]
+    missing = [name for name in CHECKS if status[name] not in (PASS, FAIL, SKIP)]
     return {
         "ok": not failed and not missing,
         "passed": passed,

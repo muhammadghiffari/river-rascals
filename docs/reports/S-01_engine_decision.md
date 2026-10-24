@@ -49,7 +49,7 @@ Do **0.50 first** on all three machines; only run 0.44 if §5 says it is needed 
 
    Put the exact release asset URL, filename and SHA-256 in §3.2.
 
-### 2.1 P1 — Windows, Tier B (Aspire, PowerShell, Windows Python)
+### 2.1 P1 — Windows, Aspire (brief says Tier B; see §3.0), PowerShell, Windows Python
 
 ```powershell
 git switch feat/s01-engine-decision
@@ -94,10 +94,11 @@ cat spike_P3_0.50.json
 
 ### 2.4 If `blenderplayer` does not start
 
-Fallback that still tests every feature (it is the editor's embedded player):
+Fallback that still tests every feature — it opens the file in the editor, so **press `P`** (or
+Render ▸ Start Game) to start the embedded player:
 
 ```bash
-python tools/run_game.py game/spike_engine.blend --editor     # add --seconds only affects --smoke
+python tools/run_game.py game/spike_engine.blend --editor
 ```
 
 Record which launcher you used in §3.2; `blenderplayer` is the shipping path (docs/03 §13).
@@ -115,9 +116,18 @@ Keep both builds side by side; do not overwrite the 0.50 folder.
 data, not opinion. `SKIP` means "feature absent in this build" — it is a finding, not a failure.
 Fill one row per (version, machine).
 
+### 3.0 Machine labels (tier conflict to resolve)
+
+The task brief for this spike labels P1 = Tier B (Aspire) and P3 = Tier C (Linux laptop), while
+`docs/16_HARDWARE_PROFILES.md` says P2 = ASUS V16 = Tier A and **P3 = mid-spec laptop = Tier B**
+(Tier C optional, unassigned). `docs/16` is still empty for real specs, so this report keeps machine
+labels neutral and **requires all three machines** to run the matrix — then the issue's "Tier A and
+Tier B" acceptance holds under either mapping. P1 should settle the mapping in `docs/16` (a human
+decision; not changed by this PR).
+
 ### 3.1 Feature grid
 
-| Check | What it proves | 0.50 / P2 (A) | 0.50 / P1 (B) | 0.50 / P3 (C) | 0.44 / P1 (B) | 0.44 / P2 (A) | 0.44 / P3 (C) |
+| Check | What it proves | 0.50 / P2 ASUS (A) | 0.50 / P1 Aspire (Win) | 0.50 / P3 Linux | 0.44 / P2 ASUS (A) | 0.44 / P1 Aspire (Win) | 0.44 / P3 Linux |
 |---|---|---|---|---|---|---|---|
 | `component` | `KX_PythonComponent` loads through `game/rr_components.py` | | | | | | |
 | `tic_rates` | `setLogicTicRate(60)` / `setPhysicsTicRate(60)` read back as 60 | | | | | | |
@@ -134,12 +144,12 @@ Fill one row per (version, machine).
 
 | Version | Machine | Release asset URL | SHA-256 | Launcher | fps avg / min | Probe `summary.ok` | Notes |
 |---|---|---|---|---|---|---|---|
-| 0.50 | P2 (Tier A) | | | blenderplayer | | | |
-| 0.50 | P1 (Tier B) | | | blenderplayer | | | |
-| 0.50 | P3 (Tier C, Linux) | | | blenderplayer | | | |
-| 0.44.x | P1 (Tier B) | | | blenderplayer | | | |
-| 0.44.x | P2 (Tier A) | | | blenderplayer | | | |
-| 0.44.x | P3 (Tier C, Linux) | | | blenderplayer | | | |
+| 0.50 | P2 ASUS (Tier A) | | | blenderplayer | | | |
+| 0.50 | P1 Aspire (Windows) | | | blenderplayer | | | |
+| 0.50 | P3 Linux laptop | | | blenderplayer | | | |
+| 0.44.x | P2 ASUS (Tier A) | | | blenderplayer | | | |
+| 0.44.x | P1 Aspire (Windows) | | | blenderplayer | | | |
+| 0.44.x | P3 Linux laptop | | | blenderplayer | | | |
 
 ### 3.3 Paste space (raw rows, in case the table above gets mangled)
 
@@ -189,21 +199,22 @@ one probe run, plus re-checking the manual component step if 0.50 needed it. Rea
 **30–45 min per machine, ~2 h total** — noticeable, not expensive, but it also doubles the
 maintenance surface (two builds on three laptops until the pin is recorded).
 
-Recommendation: **time-box 0.44 to one machine (P1, Tier B) and only these decisive checks**, unless
-0.50 fails on a feature that a second build could plausibly fix:
+Recommendation (a **P1 decision**, not this PR's): **time-box 0.44 to one machine (P1) and only the
+decisive checks below**, unless 0.50 fails on a feature that a second build could plausibly fix:
 
 | Priority | Check | Why decisive |
 |---|---|---|
-| 1 | `component` | Everything we build is a component; 0.50 already segfaults in `-b` (P3) — if windowed registration is also fragile, 0.44 is the safer pin. |
+| 1 | `component` | Everything we build is a component; 0.50 reportedly segfaults in `-b` (P3) — if windowed registration is also fragile, 0.44 is the safer pin. |
 | 2 | `tic_rates` | The whole physics spec assumes a fixed 60 Hz step; a build that silently ignores the setter invalidates docs/07. |
 | 3 | `aud_play` + `aud_3d` | Music stems and hazard cues are core to the cozy-chaotic feel; `aud` has changed names across versions (`Factory` → `Sound`). |
 | 4 | `play_action` | Signature drifted historically (`blend_mode` added); catches glue written for the wrong build. |
 | 5 | `overlay` + `filter2d` | Both are HUD/preset features we can redesign if missing (camera-parented HUD, baked presets), so they are *not* pin-decisive. |
 | 6 | `physics` + `fps` | Bullet is the same library in both; fps on a trivial scene says nothing about docs/13 budgets. |
 
-If 0.50 passes checks 1–4 on Tier A and Tier B, **skip the full 0.44 matrix** and record the
+If 0.50 passes checks 1–4 on P2 and on both P1/P3, **the 0.44 matrix may be skipped** and record the
 decision with a one-line rationale ("0.44 not run; 0.50 passed all decisive checks; fallback
-retained in case S-02/S-03 hit a wall"). The 0.50 Linux `-b` crash stays a known issue (§6.1)
+retained in case S-02/S-03 hit a wall"). The issue's "both candidate versions" acceptance is met only
+by the full matrix **or** by that explicit, recorded exception. The 0.50 Linux `-b` crash stays a known issue (§6.1)
 because our workflow does not need `-b` component creation: generation is windowed, CI never runs
 Blender.
 
@@ -213,8 +224,8 @@ Blender.
 
 ### 6.1 0.50 Linux: creating a Python Component via `bpy` in `blender -b` segfaults (P3)
 
-Reproduced by P3 on the 0.50 Linux build: `bpy.ops.logic.python_component_register(...)` in
-background mode kills the process. Consequences, already handled in the generator:
+Reported by P3 on the 0.50 Linux build (no log/issue link in the repo yet — add one here when
+available): `bpy.ops.logic.python_component_register(...)` in background mode kills the process. Consequences, already handled in the generator:
 
 - `tools/blender/gen_spike_engine.py` **refuses** to register components in background mode unless
   `--allow-background-components` is passed explicitly.
@@ -271,9 +282,10 @@ matrix, and it would mean rewriting `rr.glue.audio` for that build.
 
 ## 7. Decision rules and provisional recommendation
 
-**Pass bar for the pin:** `component`, `tic_rates`, `physics`, `aud_play` PASS on Tier A **and**
-Tier B on the same version; `aud_3d` and `play_action` PASS on at least one machine; `overlay` and
-`filter2d` MAY be SKIP (redesignable); fps ≥ 30 on the trivial scene everywhere it runs.
+**Pass bar for the pin:** `component`, `tic_rates`, `physics`, `aud_play` PASS on the same version on
+**all three machines** (P2 = Tier A, plus P1 and P3 — which covers "Tier B" under either tier mapping,
+see §3.0); `aud_3d` and `play_action` PASS on at least one machine; `overlay` and `filter2d` MAY be
+SKIP (redesignable); fps ≥ 30 on the trivial scene everywhere it runs.
 
 **Provisional recommendation (not a decision):** pin **0.50** if the bar is met — it is the newest
 stable line, has the fast-AddObject and GPU-skinning work the asset/perf plans want (docs/03 §8),
