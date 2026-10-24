@@ -4,7 +4,7 @@ Last automated run: 2026-10-23 (Linux sandbox, Python 3.12, OpenCode 1.19.4). No
 ## 1. Verified automatically (re-run these yourself)
 | Check | Command | Result |
 |---|---|---|
-| Unit + repo-consistency + physics-target tests | `python -m unittest discover -s tests` and `python -m pytest -q` | 28 passed |
+| Unit + repo-consistency + physics-target + spike-grading tests | `python -m unittest discover -s tests` and `python -m pytest -q` | 42 passed |
 | Lint (same as CI) | `ruff check src tests tools scripts game` | clean |
 | Syntax of all Python incl. bge/bpy scripts | `python -m compileall -q src tools scripts game` | OK (syntax only, not behaviour) |
 | JSON validity | backlog + opencode.json | OK |
@@ -13,7 +13,8 @@ Last automated run: 2026-10-23 (Linux sandbox, Python 3.12, OpenCode 1.19.4). No
 | Data | 56 backlog, 83 assets, 64 audio, all with prompts | OK |
 
 ## 2. NOT verified (do not assume)
-- Every `bge.*` / `bpy` call in `src/rr/glue`, `game/rr_components.py`, `tools/blender/*`, `tools/run_game.py` (marked VERIFY).
+- Every `bge.*` / `bpy` / `aud` call in `src/rr/glue`, `game/rr_components.py`, `tools/blender/*`, `tools/run_game.py` (marked VERIFY).
+- S-01 engine spike: `tools/blender/gen_spike_engine.py`, `src/rr/glue/spike_probe.py` and the test matrix in `docs/reports/S-01_engine_decision.md` are **unrun** (no UPBGE here). Windowed component registration is untested; background registration is a known 0.50 Linux segfault. `docs/03` overlay API wording was corrected against the UPBGE docs, not by running it.
 - Raft feel, buoyancy coupling with Bullet, performance on any laptop.
 - Blender MCP with UPBGE (S-04), env var names for `mcp-for-blender`.
 - Real bootstrap (repo creation, branch protection on a private free repo, LFS quota), CI run on GitHub.
