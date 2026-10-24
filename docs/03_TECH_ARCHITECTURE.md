@@ -13,6 +13,7 @@ Facts gathered at handover time: UPBGE **0.50** is built on **Blender 5.0.1** (r
 ```
 UPBGE version: ____   Blender base: ____   URL: ____   SHA256: ____   Decided: ____ by ____
 ```
+**S-01 status (2026-10-24)**: probe scene, component and test matrix prepared — `docs/reports/S-01_engine_decision.md`. Pin unchanged; the matrix must be filled on Tier A/B (and optionally C) before this block is completed. Known 0.50 Linux issue: creating a Python Component via `bpy` in `blender -b` segfaults, so scene generation is windowed (`tools/blender/gen_spike_engine.py` refuses background component creation).
 Never upgrade the pinned engine without a PR that re-runs smoke tests on both hardware tiers.
 **Re-checked 2026-10-23**: 0.50 (Blender 5.0.1, Jan 2026) is still the latest *stable* release. The UPBGE repo also publishes automated **weekly alpha** builds (0.52/0.53 Alpha at the time of writing) — these are pre-releases and must **not** be pinned. Pin by release URL + SHA-256, not by "latest".
 
@@ -39,7 +40,7 @@ river-rascals/
  Events (core EventBus) ◀─┴─▶ Hazards · Collectibles · Checkpoints · HUD · Audio · VFX
  Save (core) ◀──▶ Game state ◀──▶ Settings (quality presets)
 ```
-- **Scenes**: `main.blend` (boot/menu), one level scene per chapter, `hud.blend` overlay scene added via `scene.addOverlayCollection`/scene overlay (VERIFY exact UPBGE API in S-01).
+- **Scenes**: `main.blend` (boot/menu), one level scene per chapter, `hud.blend` linked as an **overlay collection** with its own camera — `KX_Scene.addOverlayCollection(kxCamera, collection)` / `removeOverlayCollection(collection)`; overlay *scenes* no longer exist since UPBGE 0.3 (API verified in S-01, see `docs/reports/S-01_engine_decision.md` §6.3; costs one extra render pass).
 - **Components** (UPBGE `KX_PythonComponent`): `RiverLoader`, `RaftPhysics`, `RaftOars`, `SmokeTest` (exist), plus `Hazard*`, `Collectible`, `Checkpoint`, `GameDirector`, `HudController`, `MusicDirector` (to build).
 - **Game state machine**: `Boot → Menu → ChapterLoad → Countdown → Playing ⇄ Paused → (Sunk → Respawn) → Finish → Results → Workshop`.
 - **Event names** (core bus): `coin_collected`, `fish_collected`, `hull_damaged`, `hull_repaired`, `checkpoint_reached`, `player_overboard`, `player_rescued`, `raft_sunk`, `chapter_finished`, `hazard_entered`, `music_state_changed`.
