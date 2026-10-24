@@ -16,6 +16,13 @@ the component by hand once (Game Object Properties > Python Component > Add:
     blender -b --python tools/blender/gen_spike_engine.py -- --no-components
 
 The `[gen] COMPONENTS:` line reports attachment; a saved scene is always written.
+
+VERIFY: no agent has run this script inside Blender/UPBGE yet. Unrun calls:
+`bpy.ops.wm.read_factory_settings`, `primitive_cube_add`/`camera_add`/`light_add`/
+`text_add`/`empty_add` + `transform_apply`, `obj.game.physics_type`/`mass`/
+`collision_bounds_type`, `keyframe_insert` and action renaming on Blender 5.x
+slotted actions, `bpy.ops.logic.python_component_register` (windowed only, see
+above), `bpy.ops.wm.save_as_mainfile`, `bpy.ops.wm.quit_blender`.
 """
 from __future__ import annotations
 
@@ -224,10 +231,11 @@ def build(args: argparse.Namespace) -> bool:
 
 def main() -> int:
     args = parse_args()
-    build(args)
+    attached = build(args)
+    rc = 0 if (attached or args.no_components) else 2
     if not args.keep_open:
         bpy.ops.wm.quit_blender()
-    return 0
+    return rc
 
 
 if __name__ == "__main__":

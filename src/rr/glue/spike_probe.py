@@ -119,7 +119,7 @@ class SpikeProbe(bge.types.KX_PythonComponent):
     def _probe_play_action(self):
         obj = self._object("SpikeAnim")
         if not obj:
-            return SKIP, "no SpikeAnim in scene"
+            return FAIL, "no SpikeAnim in scene (setup gap, not an engine feature)"
         # The positional form is the API contract; keyword support is recorded but
         # must not decide the feature (bge methods need not accept keywords).
         obj.playAction("SpikeBounce", 1, 20, 0, 0, 0,
@@ -128,6 +128,9 @@ class SpikeProbe(bge.types.KX_PythonComponent):
         name = obj.getActionName(0)
         playing = obj.isPlayingAction(0)
         obj.stopAction(0)
+        positional_ok = name == "SpikeBounce" and bool(playing)
+        # Keyword support is informational only: any exception here (not just
+        # TypeError) must not decide the feature.
         keyword = "no"
         try:
             obj.playAction(name="SpikeBounce", start_frame=1, end_frame=20,
@@ -135,11 +138,10 @@ class SpikeProbe(bge.types.KX_PythonComponent):
                            blend_mode=bge.logic.KX_ACTION_BLEND_BLEND, speed=1.0)
             keyword = "yes"
             obj.stopAction(0)
-        except TypeError as exc:
-            keyword = "rejected (%s)" % exc
-        self._note("play_action", "keyword form: %s" % keyword)
-        note = "positional ok; name=%r playing=%s; keywords=%s" % (name, playing, keyword)
-        positional_ok = name == "SpikeBounce" and bool(playing)
+        except Exception as exc:  # noqa: BLE001 - reported, never gating
+            keyword = "rejected (%s: %s)" % (type(exc).__name__, exc)
+        note = "positional name=%r playing=%s -> %s; keywords=%s" % (
+            name, playing, "PASS" if positional_ok else "FAIL", keyword)
         return (PASS if positional_ok else FAIL), note
 
     def _probe_filter2d(self):
@@ -205,7 +207,7 @@ class SpikeProbe(bge.types.KX_PythonComponent):
 
     def _probe_fps(self):
         if not self.samples:
-            return SKIP, "no fps samples"
+            return FAIL, "no fps samples (probe ran shorter than one sample)"
         avg = sum(self.samples) / len(self.samples)
         return (PASS if avg >= 30.0 else FAIL), "avg=%.1f min=%.1f n=%d" % (
             avg, min(self.samples), len(self.samples))
@@ -256,6 +258,8 @@ class SpikeProbe(bge.types.KX_PythonComponent):
                 value = getattr(app, name, None) if app else None
                 if isinstance(value, str):
                     return value
+                if isinstance(value, (tuple, list)) and value:
+                    return ".".join(str(part) for part in value)
             return None
 
         upbge = first("upbge_version_string", "upbge_version")

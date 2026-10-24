@@ -39,6 +39,15 @@ def decide(cfg, agent, tool, arg="*"):
 
 
 class BacklogTests(unittest.TestCase):
+    def test_provenance_csv_is_well_formed(self):
+        with open(ROOT / "assets/PROVENANCE.csv", encoding="utf-8", newline="") as f:
+            rows = list(csv.DictReader(f))
+        self.assertTrue(rows, "PROVENANCE.csv has no rows")
+        for row in rows:
+            self.assertNotIn(None, row, "extra delimiters/unquoted comma in %r" % row)
+            self.assertEqual(len(row), 8, row)
+            self.assertTrue(row["file"] and row["licence"], row)
+
     def test_backlog_matches_bootstrap(self):
         bg = _load("scripts/bootstrap_github.py", "bg")
         items = json.loads((ROOT / "backlog/backlog.json").read_text(encoding="utf-8"))

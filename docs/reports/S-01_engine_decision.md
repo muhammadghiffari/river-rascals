@@ -18,7 +18,7 @@ rendering quality presets (docs/03 §7 is unchanged by this spike).
 | Probe component | `src/rr/glue/spike_probe.py` | One check per feature, writes `spike_*.json`, prints a ready-made matrix row. |
 | Grading helpers | `src/rr/core/spike.py` + `tests/test_spike.py` | Pure pass/fail/skip grading and markdown row formatting (unit-tested). |
 | Test tone | `assets/audio/sfx/SFX_ToneTest_01.ogg` | Own-made 440 Hz, 1.0 s mono Vorbis; provenance row `AUD_SPIKE_TONE_01`. |
-| Launcher | `tools/run_game.py` | Now exports `game/` and `src/` on `PYTHONPATH` so components import in `blenderplayer` from any cwd. |
+| Launcher | `tools/run_game.py` | Exports `game/` and `src/` on `PYTHONPATH` (best effort — Blender may ignore it without `--python-use-system-env`, hence VERIFY; the generator also puts `game/` on `sys.path` for registration). |
 
 The `.blend` is **not committed by this PR**: it can only be produced on a machine with UPBGE
 installed, and (see §6) it may need one manual component attachment. Generate it once per machine,
@@ -52,7 +52,7 @@ Do **0.50 first** on all three machines; only run 0.44 if §5 says it is needed 
 ### 2.1 P1 — Windows, Aspire (brief says Tier B; see §3.0), PowerShell, Windows Python
 
 ```powershell
-git switch feat/s01-engine-decision
+git switch main
 git pull
 $env:UPBGE_PATH = "C:\tools\upbge-0.50-windows-x64"      # folder with blender.exe + blenderplayer.exe
 python scripts/check_env.py
@@ -76,10 +76,10 @@ Get-Content spike_P1_0.50.json
 Same as §2.1 with `$env:RR_SPIKE_MACHINE = "P2"` and `spike_P2_0.50.json`.
 Run it **plugged in**, performance power mode, 1080p — same rules as docs/16.
 
-### 2.3 P3 — Linux, Tier C
+### 2.3 P3 — Linux laptop (Tier C per the brief; see §3.0)
 
 ```bash
-git switch feat/s01-engine-decision && git pull
+git switch main && git pull
 export UPBGE_PATH="$HOME/tools/upbge-0.50-linux-x64"
 python scripts/check_env.py
 
@@ -137,7 +137,7 @@ decision; not changed by this PR).
 | `aud_3d` | `Handle.location` / `relative` / distance settings (docs/06 §5) | | | | | | |
 | `filter2d` | `scene.filterManager.addFilter(RAS_2DFILTER_GRAYSCALE)` + remove | | | | | | |
 | `overlay` | `scene.addOverlayCollection(kxCamera, collection)` + remove | | | | | | |
-| `play_action` | `playAction(name, start_frame, end_frame, …, blend_mode=)` positional **and** keyword form | | | | | | |
+| `play_action` | positional `playAction(name, start_frame, end_frame, …, blend_mode=)`; keyword support is recorded in notes (non-gating) | | | | | | |
 | `fps` | `bge.logic.getAverageFrameRate()` ≥ 30 on this trivial scene | | | | | | |
 
 ### 3.2 Run log (one row per machine/version)
@@ -214,7 +214,8 @@ decisive checks below**, unless 0.50 fails on a feature that a second build coul
 If 0.50 passes checks 1–4 on P2 and on both P1/P3, **the 0.44 matrix may be skipped** and record the
 decision with a one-line rationale ("0.44 not run; 0.50 passed all decisive checks; fallback
 retained in case S-02/S-03 hit a wall"). The issue's "both candidate versions" acceptance is met only
-by the full matrix **or** by that explicit, recorded exception. The 0.50 Linux `-b` crash stays a known issue (§6.1)
+by the full matrix **or** by that explicit, recorded exception (the AC is `docs/10_PHASE_PROMPTS.md`
+P1.1: "matrix complete for both candidate versions on Tier A and Tier B"). The 0.50 Linux `-b` crash stays a known issue (§6.1)
 because our workflow does not need `-b` component creation: generation is windowed, CI never runs
 Blender.
 
@@ -224,8 +225,7 @@ Blender.
 
 ### 6.1 0.50 Linux: creating a Python Component via `bpy` in `blender -b` segfaults (P3)
 
-Reported by P3 on the 0.50 Linux build (no log/issue link in the repo yet — add one here when
-available): `bpy.ops.logic.python_component_register(...)` in background mode kills the process. Consequences, already handled in the generator:
+Reported by P3 on the 0.50 Linux build — **not reproduced by this PR** (no log/issue link in the repo yet; add one when available): `bpy.ops.logic.python_component_register(...)` in background mode kills the process. Consequences, already handled in the generator:
 
 - `tools/blender/gen_spike_engine.py` **refuses** to register components in background mode unless
   `--allow-background-components` is passed explicitly.
