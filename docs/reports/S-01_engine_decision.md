@@ -1,8 +1,9 @@
 # S-01 — Engine decision: UPBGE 0.50 (Blender 5.0.1) vs 0.44.x
 
-**Status: OPEN — matrix awaiting manual runs.** The pin in `docs/03_TECH_ARCHITECTURE.md` §2 is
-**unchanged** (`____`); a human owner approves the final version. This file is scored by humans
-pasting the output of one probe component, so it stays cheap to run on three machines.
+**Status: OPEN — matrix INCOMPLETE (no runs recorded).** The pin in
+`docs/03_TECH_ARCHITECTURE.md` §2 is **unchanged** (`____`); a human owner approves the final
+version. This file is scored by humans pasting the output of one probe component, so it stays cheap
+to run on three machines.
 
 Scope of the spike (docs/10 P1.1): Python Components, `aud`, `blenderplayer` launch, tic rates and
 physics at 60 Hz on both candidate versions. Not in scope: asset export, publishing add-on (S-06),
@@ -49,7 +50,7 @@ Do **0.50 first** on all three machines; only run 0.44 if §5 says it is needed 
 
    Put the exact release asset URL, filename and SHA-256 in §3.2.
 
-### 2.1 P1 — Windows, Aspire (brief says Tier B; see §3.0), PowerShell, Windows Python
+### 2.1 P1 — Windows, Aspire, PowerShell, Windows Python
 
 ```powershell
 git switch main
@@ -76,7 +77,7 @@ Get-Content spike_P1_0.50.json
 Same as §2.1 with `$env:RR_SPIKE_MACHINE = "P2"` and `spike_P2_0.50.json`.
 Run it **plugged in**, performance power mode, 1080p — same rules as docs/16.
 
-### 2.3 P3 — Linux laptop (Tier C per the brief; see §3.0)
+### 2.3 P3 — Linux laptop
 
 ```bash
 git switch main && git pull
@@ -116,14 +117,17 @@ Keep both builds side by side; do not overwrite the 0.50 folder.
 data, not opinion. `SKIP` means "feature absent in this build" — it is a finding, not a failure.
 Fill one row per (version, machine).
 
-### 3.0 Machine labels (tier conflict to resolve)
+**Matrix status: INCOMPLETE.** No probe rows have been recorded. The required rows are **0.50 and
+0.44.x on Tier A (P2 ASUS) and Tier B (P3 Linux laptop)**; this report also asks for P1's machine row,
+but that extra row does not substitute for the Tier A/B rows. Issue #9 stays open until the required
+rows exist and the pin block in `docs/03` §2 is filled.
 
-The task brief for this spike labels P1 = Tier B (Aspire) and P3 = Tier C (Linux laptop), while
-`docs/16_HARDWARE_PROFILES.md` says P2 = ASUS V16 = Tier A and **P3 = mid-spec laptop = Tier B**
-(Tier C optional, unassigned). `docs/16` is still empty for real specs, so this report keeps machine
-labels neutral and **requires all three machines** to run the matrix — then the issue's "Tier A and
-Tier B" acceptance holds under either mapping. P1 should settle the mapping in `docs/16` (a human
-decision; not changed by this PR).
+### 3.0 Machine labels
+
+`docs/16_HARDWARE_PROFILES.md` records P2 = ASUS V16 = Tier A and **P3 = mid-spec laptop = Tier B**
+(Tier C optional, unassigned); P1's machine tier is not yet recorded. This report uses the machine
+labels P1/P2/P3 and does not assign a different tier to P3. Fill the hardware rows in `docs/16` when
+the specs are known (a human decision; not changed by this PR).
 
 ### 3.1 Feature grid
 
@@ -211,13 +215,13 @@ decisive checks below**, unless 0.50 fails on a feature that a second build coul
 | 5 | `overlay` + `filter2d` | Both are HUD/preset features we can redesign if missing (camera-parented HUD, baked presets), so they are *not* pin-decisive. |
 | 6 | `physics` + `fps` | Bullet is the same library in both; fps on a trivial scene says nothing about docs/13 budgets. |
 
-If 0.50 passes checks 1–4 on P2 and on both P1/P3, **the 0.44 matrix may be skipped** and record the
-decision with a one-line rationale ("0.44 not run; 0.50 passed all decisive checks; fallback
-retained in case S-02/S-03 hit a wall"). The issue's "both candidate versions" acceptance is met only
-by the full matrix **or** by that explicit, recorded exception (the AC is `docs/10_PHASE_PROMPTS.md`
-P1.1: "matrix complete for both candidate versions on Tier A and Tier B"). The 0.50 Linux `-b` crash stays a known issue (§6.1)
-because our workflow does not need `-b` component creation: generation is windowed, CI never runs
-Blender.
+If 0.50 passes checks 1–4 on P2 and on both P1/P3, P1 may still **time-box or skip** the 0.44 runs
+as a risk-reduction choice. A skipped or partial 0.44 run does **not** satisfy the `docs/10` P1.1
+acceptance ("matrix complete for both candidate versions on Tier A and Tier B"): the matrix stays
+**INCOMPLETE**, and issue #9 must stay open. Record the exception and the exact rows still to run;
+only a complete 0.50 + 0.44 matrix on the required tiers closes the acceptance. The 0.50 Linux `-b`
+crash stays a known issue (§6.1) because our workflow does not need `-b` component creation:
+generation is windowed, CI never runs Blender.
 
 ---
 
@@ -283,9 +287,9 @@ matrix, and it would mean rewriting `rr.glue.audio` for that build.
 ## 7. Decision rules and provisional recommendation
 
 **Pass bar for the pin:** `component`, `tic_rates`, `physics`, `aud_play` PASS on the same version on
-**all three machines** (P2 = Tier A, plus P1 and P3 — which covers "Tier B" under either tier mapping,
-see §3.0); `aud_3d` and `play_action` PASS on at least one machine; `overlay` and `filter2d` MAY be
-SKIP (redesignable); fps ≥ 30 on the trivial scene everywhere it runs.
+**all three machines** (P2, P1, P3; docs/16 records P2 = Tier A and P3 = Tier B); `aud_3d` and
+`play_action` PASS on at least one machine; `overlay` and `filter2d` MAY be SKIP (redesignable);
+fps ≥ 30 on the trivial scene everywhere it runs.
 
 **Provisional recommendation (not a decision):** pin **0.50** if the bar is met — it is the newest
 stable line, has the fast-AddObject and GPU-skinning work the asset/perf plans want (docs/03 §8),
@@ -294,8 +298,8 @@ workflow. Keep **0.44.x** as the fallback for S-02/S-03 if raft physics destabil
 5 base (risk R-01 already says "switch to 0.44 if 0.50 blocks by M1 end").
 
 **Escalate to the human owner (P1) instead of switching unilaterally if:** any of `component`,
-`tic_rates`, `physics`, `aud_play` fails on 0.50 on Tier B, or the 0.50 Linux build cannot run the
-probe at all.
+`tic_rates`, `physics`, `aud_play` fails on 0.50 on Tier A or Tier B (P2 or P3), or the 0.50 Linux
+build cannot run the probe at all.
 
 **Pin block (docs/03 §2) — fill only after approval:**
 
