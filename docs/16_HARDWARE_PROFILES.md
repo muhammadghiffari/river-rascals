@@ -78,6 +78,7 @@ python tools/bench/run_baseline.py --res 1280x720 --res 1366x768 --preset low \
 | 100k | 100,352 | 1366x768 | 1366x768 (yes) | 59.9 | 59.4 | 21.5 | 16.7 | 16.8 | 46.6 | 2 | 3550 |
 | 250k | 250,632 | 1280x720 | 1280x720 (yes) | 59.9 | 59.7 | 18.2 | 16.7 | 16.7 | 55.0 | 3 | 3553 |
 | 250k | 250,632 | 1366x768 | 1366x768 (yes) | 59.9 | 59.8 | 20.1 | 16.7 | 16.7 | 49.6 | 2 | 3555 |
+| 250k — optional dGPU run (Radeon R7 M260X, `DRI_PRIME=1`; **not** the Tier C baseline) | 250,632 | 1280x720 | 1280x720 (yes) | 59.8 | 58.6 | 23.8 | 16.7 | 17.1 | 42.1 | 3 | 3331 |
 
 All six runs sit at the panel rate (~59.8 Hz): the optional Tier C target (≥ 24 fps avg, Low, 720p) is met, but these
 numbers separate **"nothing is wrong"** from **"how much room is left"** only poorly. The low `fps_min` values (18–28 fps) are a
