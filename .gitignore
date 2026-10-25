@@ -25,6 +25,7 @@ venv/
 /build/
 # Test / run artefacts
 smoke_result.json
+spike_*.json
 *.corrupt
 # In-flight benchmark output (atomic write temp files; never commit these)
 docs/reports/bench/.*.raw.json
