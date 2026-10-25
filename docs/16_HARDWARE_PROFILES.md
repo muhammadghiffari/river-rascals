@@ -26,6 +26,7 @@ Authors did **not** have the exact specs; each owner fills their row in week 1 (
 - Laptops throttle: test plugged in, record temps if possible, run ≥ 5 minutes.
 
 ## MCP status (P2 fills)
+addon works inside UPBGE 0.50: yes (cube create/delete via MCP verified, see PR #65 comment); note: import bge fails in the editor context via MCP (aud imports), runtime import not verified
 | Item | Value |
 |---|---|
 | Blender/UPBGE version | **UPBGE 0.50** portable, Blender base **5.0.1** (`bpy.app.version_string` = `5.0.1`, build hash `9fcf0da621c3`, built 2026-01-03), `%UPBGE_PATH%` = `C:\Users\Radith\Downloads\upbge-0.50-windows-x64\upbge-0.50-windows-x64`. Installer `upbge-0.50-windows-x64.7z` (293,316,768 bytes) **SHA256 `c59198cbe361afa9d78f515751d2a34f3df236f137393111fd8cc4b43e1dce71`** — recomputed locally on 2026-10-24 and matches. `blender.exe` SHA256 `345f0a0b6b8658c42529fd727fd8135fca7715caf969cc064e303d0e3729d181` |
