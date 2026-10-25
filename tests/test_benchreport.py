@@ -4,8 +4,15 @@ import json
 import os
 import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
+
+# Stub bge before importing glue module so tests run outside UPBGE
+if "bge" not in sys.modules:
+    _bge_stub = types.ModuleType("bge")
+    _bge_stub.types = types.SimpleNamespace(KX_PythonComponent=object)
+    sys.modules["bge"] = _bge_stub
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
@@ -17,6 +24,7 @@ from rr.core.benchreport import (  # noqa: E402
     write_json_atomic,
 )
 from rr.core.benchstats import summarize  # noqa: E402
+from rr.glue.bench import _fps_crosscheck  # noqa: E402
 
 
 def _stats(**overrides):
@@ -160,6 +168,90 @@ class AtomicWriteTests(unittest.TestCase):
                 write_json_atomic(target, {"bad": float("nan")})
             self.assertEqual(json.loads(target.read_text()), {"kept": True})
             self.assertEqual([p.name for p in Path(tmp).iterdir()], ["result.json"])
+
+
+class FpsCrosscheckTests(unittest.TestCase):
+    def test_basic_crosscheck_min_avg_max(self):
+        result = _fps_crosscheck([58.0, 60.0, 62.0])
+        self.assertEqual(result["samples"], 3)
+        self.assertAlmostEqual(result["min_fps"], 58.0)
+        self.assertAlmostEqual(result["avg_fps"], 60.0)
+        self.assertAlmostEqual(result["max_fps"], 62.0)
+        self.assertIn("getAverageFrameRate", result["source"])
+        self.assertIn("cannot produce a 1% low", result["semantics"])
+
+    def test_empty_and_none_samples(self):
+        for empty_input in ([], (), [None], [None, None]):
+            with self.subTest(samples=empty_input):
+                result = _fps_crosscheck(empty_input)
+                self.assertEqual(result["samples"], 0)
+                self.assertIsNone(result["min_fps"])
+                self.assertIsNone(result["avg_fps"])
+                self.assertIsNone(result["max_fps"])
+
+    def test_none_values_are_filtered(self):
+        result = _fps_crosscheck([None, 30.0, None, 50.0])
+        self.assertEqual(result["samples"], 2)
+        self.assertAlmostEqual(result["min_fps"], 30.0)
+        self.assertAlmostEqual(result["avg_fps"], 40.0)
+        self.assertAlmostEqual(result["max_fps"], 50.0)
+
+    def test_single_sample(self):
+        result = _fps_crosscheck([45.5])
+        self.assertEqual(result["samples"], 1)
+        self.assertAlmostEqual(result["min_fps"], 45.5)
+        self.assertAlmostEqual(result["avg_fps"], 45.5)
+        self.assertAlmostEqual(result["max_fps"], 45.5)
+
+    def test_outlier_one_million_fps_isolated_in_max(self):
+        # Observed UPBGE 0.50 Linux glitch where getAverageFrameRate() spikes to ~1e6 fps.
+        # max_fps surfaces the outlier while avg_fps reflects the distortion.
+        samples = [60.0, 60.0, 1_000_000.0, 60.0]
+        result = _fps_crosscheck(samples)
+        self.assertEqual(result["samples"], 4)
+        self.assertAlmostEqual(result["min_fps"], 60.0)
+        self.assertAlmostEqual(result["max_fps"], 1_000_000.0)
+        self.assertAlmostEqual(result["avg_fps"], (180.0 + 1_000_000.0) / 4)
+
+    def test_invalid_sample_types_raise_value_error(self):
+        with self.assertRaises(ValueError):
+            _fps_crosscheck(["not_a_number"])
+
+    def test_build_report_with_crosscheck(self):
+        crosscheck = _fps_crosscheck([60.0, 60.0])
+        report = build_report(
+            stats=_stats(),
+            scene_label="empty",
+            preset="low",
+            requested_resolution="1280x720",
+            actual_resolution="1280x720",
+            duration_s=60.0,
+            warmup_s=3.0,
+            platform="linux",
+            engine="UPBGE 5.0.1",
+            gpu_vendor="Intel",
+            fps_crosscheck=crosscheck,
+        )
+        self.assertEqual(report["fps_crosscheck"]["samples"], 2)
+        self.assertFalse(any("fps_crosscheck is empty" in note for note in report["notes"]))
+
+    def test_build_report_empty_crosscheck_adds_note(self):
+        empty_crosscheck = _fps_crosscheck([])
+        report = build_report(
+            stats=_stats(),
+            scene_label="empty",
+            preset="low",
+            requested_resolution="1280x720",
+            actual_resolution="1280x720",
+            duration_s=60.0,
+            warmup_s=3.0,
+            platform="linux",
+            engine="UPBGE 5.0.1",
+            gpu_vendor="Intel",
+            fps_crosscheck=empty_crosscheck,
+        )
+        self.assertEqual(report["fps_crosscheck"]["samples"], 0)
+        self.assertTrue(any("fps_crosscheck is empty" in note for note in report["notes"]))
 
 
 if __name__ == "__main__":
