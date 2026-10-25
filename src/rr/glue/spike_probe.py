@@ -102,19 +102,41 @@ class SpikeProbe(bge.types.KX_PythonComponent):
         logic = bge.logic.getLogicTicRate()
         physics = bge.logic.getPhysicsTicRate()
         ok = abs(logic - self.want_logic) < 0.6 and abs(physics - self.want_physics) < 0.6
-        note = "logic=%.1f physics=%.1f (wanted %.0f/%.0f)" % (
-            logic, physics, self.want_logic, self.want_physics)
+        # VERIFY: on UPBGE 0.50 Windows P2 run, getPhysicsTicRate() returned 0.0 even
+        # though setPhysicsTicRate(60) was called in start().  Three hypotheses:
+        # (a) getter returns 0 before first Bullet step (probe fires at t≥0.5 s, but
+        #     Bullet may initialise later); (b) the getter API changed or was removed;
+        # (c) Bullet disabled (would also explain physics FAIL below).
+        # Record the raw value so the next run can distinguish them.
+        physics_zero_note = ""
+        if physics == 0.0:
+            physics_zero_note = (
+                "; physics=0.0 — possible causes: getter uninitialized before first "
+                "physics step, API change, or Bullet disabled; see §6.8"
+            )
+        note = "logic=%.1f physics=%.1f (wanted %.0f/%.0f)%s" % (
+            logic, physics, self.want_logic, self.want_physics, physics_zero_note)
         return (PASS if ok else FAIL), note
 
     def _probe_physics(self):
         if not self.box:
             return FAIL, "no SpikeBox in scene"
         z = self.box.worldPosition.z
-        speed = len(self.box.worldLinearVelocity)
+        vel = self.box.worldLinearVelocity
+        speed = len(vel)
         fell = self.start_z - z
         ok = fell > 1.5 and z < 1.0 and speed < 0.5
-        return (PASS if ok else FAIL), "z=%.2f start_z=%.2f fell=%.2f |v|=%.2f" % (
-            z, self.start_z, fell, speed)
+        # VERIFY: on UPBGE 0.50 Windows P2 run, box stayed at z=3.00 (fell=0.00, |v|=0.00).
+        # Record vx/vy/vz to disambiguate on the next run:
+        #   vz<0 and vx,vy≈0 → gravity correct axis, timing; check fell at later t.
+        #   vy≠0 and vz≈0 → gravity on +Y (forward) not -Z (up); generator needs
+        #     scene.game_settings.physics_gravity direction check.
+        #   all v≈0 → Bullet not running; root cause shared with tic_rates FAIL.
+        note = ("z=%.2f start_z=%.2f fell=%.2f |v|=%.2f "
+                "vx=%.2f vy=%.2f vz=%.2f") % (
+            z, self.start_z, fell, speed,
+            vel[0], vel[1], vel[2])
+        return (PASS if ok else FAIL), note
 
     def _probe_play_action(self):
         obj = self._object("SpikeAnim")

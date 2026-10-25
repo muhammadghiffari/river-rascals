@@ -382,6 +382,47 @@ Windowed generation/registration, manual attachment, runtime probe checks and th
 command have **not** been run by this agent. None of the S-01 feature-matrix cells is closed
 by this headless validation. No commit/push is authorized by these instructions.
 
+### 6.8 P2 probe run — OPEN FINDINGS (2026-10-26, Catalna, ASUS V16, UPBGE 0.50)
+
+Branch `scratch/s01-p2`; JSON `spike_P2_0.50_run1.json` written to an absolute path; exit 0;
+no `gpu.shader` errors. All 7 start checks + `tic_rates`, `physics`, `fps` ran.
+
+**These are OPEN FINDINGS, not a pass or fail verdict for 0.50 on Tier A.** The matrix row for
+0.50/P2 stays blank until the physics cause is isolated, the fixed probe is re-run on P1 and P2,
+and the 0.44.x rows exist.
+
+#### Finding F-1 — `tic_rates` FAIL: `getPhysicsTicRate()` returned 0.0
+
+- Probe note: `logic=60.0 physics=0.0 (wanted 60/60)`.
+- `setPhysicsTicRate(60)` was called in `start()`; the getter returned 0.0 at t≥0.5 s.
+- The JSON `"tic"` field (`{"logic": 60.0, "physics": 60.0}`) is the **setpoint**, not a measurement.
+- Hypotheses (unconfirmed, in priority order):
+  - (a) `getPhysicsTicRate()` returns 0 before the first Bullet step completes — the setter is
+    queued and the getter reflects the pre-init value; probe at 0.5 s may be too early.
+  - (b) The getter API changed or was removed in UPBGE 0.50.
+  - (c) Bullet was not active (would also explain Finding F-2).
+- **Next step:** rerun with the updated probe diagnostics (recording exact getter value and timing).
+  Do not move the matrix cell from blank to FAIL or PASS until the cause is confirmed.
+
+#### Finding F-2 — `physics` FAIL: box never fell (`z=3.00`, `fell=0.00`)
+
+- Probe note: `z=3.00 start_z=3.00 fell=0.00 |v|=0.00`.
+- Saved scene: `SpikeBox` RIGID_BODY, mass 5, BOX collision, Bullet physics engine, gravity 9.81.
+- Box did not move at all; velocity magnitude was 0.0.
+- The updated probe records `vx`, `vy`, `vz` separately on the next run, enabling disambiguation:
+  - `vz<0` → gravity on correct axis, probe timing issue (fell value too small at t=3 s).
+  - `vy≠0, vz≈0` → gravity acting on wrong axis (+Y forward, not −Z up).
+  - all `v≈0` → Bullet not running / physics not ticking; root cause shared with F-1.
+- **Next step:** fix-probe rerun on P1 and P2 with velocity components to isolate the physics cause.
+
+#### Finding F-3 — `fps` artifact: avg=200050.1, min=0.0, n=25
+
+- `getAverageFrameRate()` returned avg=200050.1, min=0.0, n=25.
+- This is junk (first-sample artifact; same ~1e6 outlier seen by hicesse on Linux).
+- It is **not an engine failure**; it is a sampling artifact from calling `getAverageFrameRate()`
+  at t≈0 before the estimator has frame history.
+- **Not recorded as a pass or fail of the `fps` check** for 0.50 on Tier A.
+
 ---
 
 ## 7. Decision rules and provisional recommendation
@@ -417,3 +458,4 @@ Re-run smoke on: Tier A ____  Tier B ____  Tier C ____
 | Date | Who | Version | Machine | Outcome |
 |---|---|---|---|---|
 | 2026-10-24 | gameplay agent | — | Linux sandbox | Generator + probe + grading tests written; **no UPBGE available, nothing run**. |
+| 2026-10-26 | P2 (Catalna) | 0.50 (Blender 5.0.1) | ASUS V16 (Tier A, Windows, `blenderplayer`) | **Full probe run** on `scratch/s01-p2` branch. All 7 start checks passed. JSON written to absolute path; exit 0; no `gpu.shader` errors. **OPEN FINDINGS — not yet pass/fail of 0.50 on Tier A:** (1) `tic_rates` FAIL: `logic=60.0 physics=0.0` — getter returned 0.0; cause unconfirmed (see §6.8). (2) `physics` FAIL: `z=3.00 start_z=3.00 fell=0.00` — box never fell despite scene having RIGID_BODY mass=5, BOX, Bullet, gravity=9.81; cause unconfirmed (see §6.8). (3) `fps avg=200050.1 min=0.0 n=25` — junk; first-sample `getAverageFrameRate()` artifact, same ~1e6 outlier seen on Linux (not an engine failure). JSON `"tic"` field records the **setpoint** (60/60), not a measurement. Matrix cell for 0.50/P2 stays blank until the physics cause is isolated, the fixed probe is re-run on P1 and P2, and the 0.44.x rows exist. |
