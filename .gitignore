@@ -16,11 +16,18 @@ venv/
 *.blend2
 *.blend@
 *.autosave
+# Generated F-05 benchmark scenes: reproducible build artefacts, not sources.
+# Regenerate with: "$UPBGE_PATH/blender" --python tools/bench/make_baseline_scenes.py
+# The generator, its manifest (game/bench/scenes.json) and the component shim are
+# the tracked inputs. Deliberately NOT tracked so they never reach LFS (see R-06).
+/game/bench/*.blend
 /dist/
 /build/
 # Test / run artefacts
 smoke_result.json
 *.corrupt
+# In-flight benchmark output (atomic write temp files; never commit these)
+docs/reports/bench/.*.raw.json
 # Secrets & local config (NEVER commit)
 .env
 .env.*
