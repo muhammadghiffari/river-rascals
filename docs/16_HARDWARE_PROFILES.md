@@ -1,20 +1,19 @@
 # 16 — Hardware Profiles & Machine Status
 Authors did **not** have the exact specs; each owner fills their row in week 1 (F-04/F-05).
-
 Tiers are defined in `13_QA_PERFORMANCE_PLAN.md` §2. **P3 is Tier C** (Linux floor-spec, iGPU, 720p/native);
 the Tier B 1080p baseline belongs to the separate Acer Aspire machine and Tier A to the ASUS V16.
 
 | Field | P1 Aspire A515-45, Windows (Tier B) | P2 ASUS V16, Windows (Tier A) | P3 — HP ZBook 14 G2 (Tier C, Linux floor-spec) |
 |---|---|---|---|
-| Model | | ASUS V16 (exact model: ) | HP ZBook 14 G2 (product A3009D410303, board 2216, notebook) |
-| OS / version | | | Ubuntu 26.04.1 LTS, x86_64 (kernel 7.0.0-38-generic, Mesa 26.0.8 for the active iGPU; glxinfo reports Mesa 26.0.8) |
-| CPU | | | Intel Core i7-5600U, 2 cores / 4 threads |
-| GPU (dedicated/iGPU) + driver | | | iGPU Intel HD Graphics 5500 (i915) + dGPU AMD Radeon R7 M260X (amdgpu). **UPBGE renders on the Intel iGPU** (measured, see notes) |
-| VRAM / shared | | | dGPU 1 GiB dedicated (`mem_info_vram_total` = 1,073,741,824 B); iGPU uses shared system RAM — `glxinfo -B` reports "Video memory: 14879 MB, Unified memory: yes", which is **shared system RAM, not dedicated VRAM** (the i915 driver exposes no dedicated-VRAM figure) |
-| RAM | | | 14.5 GiB (MemTotal 15,236,760 kB; documented as "14 GiB") |
-| Storage free (SSD/HDD) | | | 38.6 GiB free of 56.1 GiB on `/` (`/dev/sdb1`, reported rotational by the kernel) |
-| Display res/refresh | | | 1366×768 @ 59.80 Hz, internal eDP-1 (no external display attached) |
-| Power mode used for tests | plugged-in, high performance (always record) | | **plugged in (AC online), platform profile `balanced`, governor `schedutil`** — the profile was *not* switched to `performance` for the F-05 runs; see the limitation note below |
+| Model | | ASUS V16 `V3607VH` (baseboard `V3607VH`, SMBIOS reports no system SKU) — **Tier A** | HP ZBook 14 G2 (product A3009D410303, board 2216, notebook) |
+| OS / version | | Windows 11 Home Single Language, build `10.0.26300`, 64-bit | Ubuntu 26.04.1 LTS, x86_64 (kernel 7.0.0-38-generic, Mesa 26.0.8 for the active iGPU; glxinfo reports Mesa 26.0.8) |
+| CPU | | Intel Core 5 210H, 8 cores / 12 threads, 2.2 GHz (Win32 `MaxClockSpeed`) | Intel Core i7-5600U, 2 cores / 4 threads |
+| GPU (dedicated/iGPU) + driver | | dGPU **NVIDIA GeForce RTX 5050 Laptop GPU**, driver `32.0.16.1071` (2026-06-28); iGPU **Intel(R) Graphics**, driver `32.0.101.7076` (2025-09-12). Neither controller name is enough to tell which one renders UPBGE — check `blender_system_info.cmd` on the first baseline run | iGPU Intel HD Graphics 5500 (i915) + dGPU AMD Radeon R7 M260X (amdgpu). **UPBGE renders on the Intel iGPU** (measured, see notes) |
+| VRAM / shared | | 8 GB dedicated dGPU (7.96 GiB, `HardwareInformation.qwMemorySize`; WMI `AdapterRAM` is capped at ~4 GB and is wrong); iGPU shares system RAM | dGPU 1 GiB dedicated (`mem_info_vram_total` = 1,073,741,824 B); iGPU uses shared system RAM — `glxinfo -B` reports "Video memory: 14879 MB, Unified memory: yes", which is **shared system RAM, not dedicated VRAM** (the i915 driver exposes no dedicated-VRAM figure) |
+| RAM | | 16 GB, single 16 GB DDR5-5600 SO-DIMM (Samsung `M425R2GA3EB0-CWMOM`), running at 5200 MT/s | 14.5 GiB (MemTotal 15,236,760 kB; documented as "14 GiB") |
+| Storage free (SSD/HDD) | | NVMe `WD PC SN5000S SDEQNSJ-512G-1002` (476.9 GiB): `C:` **20.3 GiB free** of 355.4 GiB; `D:` 96.5 GiB free of 119.9 GiB. `C:` is tight — keep the UPBGE build and LFS cache on `D:` or free space before baseline runs | 38.6 GiB free of 56.1 GiB on `/` (`/dev/sdb1`, reported rotational by the kernel) |
+| Display res/refresh | | 1920×1200 panel (`MNG007QX2-2`), 60 Hz (only mode the panel advertises); Windows desktop currently 1536×960 at 150 % scaling | 1366×768 @ 59.80 Hz, internal eDP-1 (no external display attached) |
+| Power mode used for tests | plugged-in, high performance (always record) | **Not yet set up for tests**: measured on battery (`PowerOnline=False`, 60 % charge) with the **Balanced** plan. Before recording baseline fps: plug in the AC adapter and switch to High performance | **plugged in (AC online), platform profile `balanced`, governor `schedutil`** — the profile was *not* switched to `performance` for the F-05 runs; see the limitation note below |
 
 ## P3 (F-05) notes — Tier C, updated 2026-10-24
 - **Classification.** i7-5600U (2C/4T, 15 W Broadwell-U), Intel HD Graphics 5500 iGPU, 1366×768 panel: below the
@@ -128,10 +127,20 @@ actual window size, tri count, vsync/`use_frame_rate` cap state, and frame-time-
 - Laptops throttle: test plugged in, record temps if possible, run ≥ 5 minutes (not done yet for P3; 60 s windows only).
 
 ## MCP status (P2 fills)
+**Addon registration in UPBGE 0.50: verified** (headless probe, 2026-10-24). Socket round-trip (OpenCode ↔ addon — create/delete cube) is **not yet verified** (remaining `techart` step of F-04; see PR #65). Note: `import bge` fails in the editor context via MCP (aud imports); runtime import not verified.
 | Item | Value |
 |---|---|
-| Blender/UPBGE version | |
-| MCP package + version | |
-| Addon works in UPBGE? | |
-| Fallback used? | |
-| Issues/workarounds | |
+| Blender/UPBGE version | **UPBGE 0.50** portable, Blender base **5.0.1** (`bpy.app.version_string` = `5.0.1`, build hash `9fcf0da621c3`, built 2026-01-03), `%UPBGE_PATH%` = `C:\Users\Radith\Downloads\upbge-0.50-windows-x64\upbge-0.50-windows-x64`. Installer `upbge-0.50-windows-x64.7z` (293,316,768 bytes) **SHA256 `c59198cbe361afa9d78f515751d2a34f3df236f137393111fd8cc4b43e1dce71`** — recomputed locally on 2026-10-24 and matches. `blender.exe` SHA256 `345f0a0b6b8658c42529fd727fd8135fca7715caf969cc064e303d0e3729d181` |
+| MCP package + version | `mcp-for-blender` **2.2.4** (PyPI, verified 2026-10-24; `blender-mcp` 2.0.0 is now only a rename shim). Bundled addon `blender_mcp.py` version **1.8**, addon protocol **15**. Run as `uvx mcp-for-blender`, uv 0.11.21 |
+| Addon works in UPBGE? | **Loads and registers: yes** (2026-10-24). Installed to `%APPDATA%\UPBGE\Blender\5.0\scripts\addons\blender_mcp.py`; `tools/blender/probe_mcp_addon.py` run headless reports `enable_result = OK`, `has_panel_class/has_start_operator/has_auto_start_property = True`, exit code 0. **Not yet proven**: the socket round-trip and the create-cube/delete-cube MCP call (OpenCode ↔ addon server) — that is the remaining `techart` step of F-04 |
+| Fallback used? | None. UPBGE 0.50 is the authoring build; no vanilla-Blender fallback needed so far |
+| Issues/workarounds | (1) `install-addon` auto-discovery only scans `%APPDATA%\Blender Foundation\Blender\<ver>`; UPBGE keeps user files under **`%APPDATA%\UPBGE\Blender\5.0`**, so the CLI must be given `--addons-dir` (or `BLENDERMCP_ADDONS_DIR`) explicitly. (2) Env var names in `opencode.json` still apply to 2.2.4: `BLENDER_HOST`/`BLENDER_PORT` are read by the server (`server.py`) and `DISABLE_TELEMETRY` is honoured (`telemetry.py` also accepts `BLENDER_MCP_DISABLE_TELEMETRY`/`MCP_DISABLE_TELEMETRY`) — **no config change needed**. (3) Telemetry is opt-in in 2.2.4 (addon preference "Allow Telemetry", default off) and off again via `DISABLE_TELEMETRY`; the addon additionally runs an update check 5 s after startup (network, not telemetry) which `BLENDERMCP_NO_UPDATE_CHECK=1` suppresses. (4) In the GUI the sidebar button reads **"Connect to MCP server"** (operator `blendermcp.start_server`); `docs/08` §3 was corrected accordingly. (5) `blender.exe` is not on `PATH`, so agents must call `& "$env:UPBGE_PATH\blender.exe"` |
+
+Setup commands used on P2 (2026-10-24, PowerShell, uv 0.11.21):
+
+```powershell
+python scripts/check_env.py                       # Result: READY
+uvx mcp-for-blender install-addon --addons-dir "$env:APPDATA\UPBGE\Blender\5.0\scripts\addons"
+uvx mcp-for-blender addon-paths                   # with BLENDERMCP_ADDONS_DIR set to the line above
+& "$env:UPBGE_PATH\blender.exe" -b --factory-startup --python tools/blender/probe_mcp_addon.py   # exit 0
+```
