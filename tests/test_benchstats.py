@@ -118,6 +118,21 @@ class BenchStatsPercentileTests(unittest.TestCase):
         result = summarize([0.01, 0.03], warmup_s=0)
         self.assertAlmostEqual(result["frame_time_ms"]["p50"], 20.0)
 
+    def test_p99_of_mixed_distribution_uses_type7_on_more_than_100_frames(self):
+        # 120 frames: 100 x 16 ms, 18 x 20 ms, 2 x 40 ms.
+        # Sorted, indices 0-99 are 16 ms, 100-117 are 20 ms, 118-119 are 40 ms.
+        # p99 position = (120 - 1) * 0.99 = 117.81: 0.81 of the way from the last
+        # 20 ms frame (index 117) to the first 40 ms frame (index 118), i.e.
+        # 20 + (40 - 20) * 0.81 = 36.2 ms, so the 1% low is 1 / 0.0362 s.
+        frame_times = [0.016] * 100 + [0.020] * 18 + [0.040] * 2
+        result = summarize(frame_times, warmup_s=0)
+
+        self.assertEqual(result["frames_measured"], 120)
+        self.assertAlmostEqual(result["frame_time_ms"]["p50"], 16.0)
+        self.assertAlmostEqual(result["frame_time_ms"]["p99"], 36.2)
+        self.assertAlmostEqual(result["p1_low_fps"], 1 / 0.0362)
+        self.assertAlmostEqual(result["fps_min"], 25.0)
+
     def test_unsorted_input_is_ordered_before_summarizing(self):
         result = summarize([0.05, 0.01, 0.03, 0.02, 0.04], warmup_s=0)
         self.assertAlmostEqual(result["frame_time_ms"]["p50"], 30.0)
@@ -178,6 +193,15 @@ class BenchStatsInputPolicyTests(unittest.TestCase):
     def test_tuple_input_is_accepted(self):
         result = summarize((0.01, 0.02), warmup_s=0)
         self.assertEqual(result["frames_measured"], 2)
+
+    def test_summarize_does_not_mutate_the_input_list(self):
+        frame_times = [0.020, 0.016, 0.050, 0.016, 0.017]
+        original = list(frame_times)
+
+        summarize(frame_times, warmup_s=0)
+
+        # Same values in the same order: percentiles are computed on a copy.
+        self.assertEqual(frame_times, original)
 
 
 class BenchStatsJsonTests(unittest.TestCase):

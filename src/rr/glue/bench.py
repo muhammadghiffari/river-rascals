@@ -27,10 +27,26 @@ credentials.
 The component ends the game once the report is written so ``blenderplayer``
 cannot linger after a run.
 
+Frame-rate cross-check
+----------------------
+Alongside the interval statistics, ``bge.logic.getAverageFrameRate()`` (the
+engine's own *estimated* average frame rate) is sampled once per second and its
+minimum, average and maximum are recorded under ``fps_crosscheck`` in the
+report. That value covers engine startup and the warmup window and cannot yield
+a 1% low, so it is a second, independent view of the run: the frame-interval
+statistics stay authoritative and are never replaced by it. ``max_fps`` is
+recorded as well because this call was observed returning an implausible
+~1e6 fps sample on UPBGE 0.50 Linux, which a bare average would hide.
+
+Runtime check: the call exists on UPBGE 0.50 Linux (``blenderplayer``, Blender
+5.0.1), returns a positive float once the engine is running, and ramps from the
+startup value to the steady rate within the first seconds.
+
 VERIFY: ``bge.logic.getGraphicsCardVendor`` and ``bge.render.getWindowWidth/Height``
 were executed against UPBGE 0.50 Linux (see docs/16 P3 notes).
 """
 
+import math
 import os
 import sys
 import time
@@ -45,8 +61,17 @@ DEFAULT_SECONDS = 60.0
 DEFAULT_WARMUP_SECONDS = 3.0
 DEFAULT_OUT = "bench_result.json"
 
+#: How often ``getAverageFrameRate()`` is sampled for the cross-check.
+FPS_SAMPLE_INTERVAL_S = 1.0
+
 #: Extra wall-clock allowance before a stalled run is force-finished anyway.
 HARD_STOP_SLACK_S = 60.0
+
+FPS_CROSSCHECK_SOURCE = "bge.logic.getAverageFrameRate() sampled once per second"
+FPS_CROSSCHECK_SEMANTICS = (
+    "engine's own estimate; it includes engine startup and the warmup window and "
+    "cannot produce a 1% low"
+)
 
 
 def _env_float(name, default):
@@ -97,6 +122,17 @@ class _EngineProbe:
             return None
 
     @staticmethod
+    def average_frame_rate():
+        """The engine's own estimated average fps, or ``None`` if unusable."""
+        try:
+            value = float(bge.logic.getAverageFrameRate())
+        except Exception:  # noqa: BLE001 - cross-check only
+            return None
+        if not math.isfinite(value) or value <= 0.0:
+            return None
+        return value
+
+    @staticmethod
     def engine_name():
         try:
             return "UPBGE " + str(bge.app.version_string)
@@ -105,6 +141,36 @@ class _EngineProbe:
                 return "UPBGE " + ".".join(str(part) for part in bge.app.version)
             except Exception:  # noqa: BLE001 - metadata only
                 return None
+
+
+def _fps_crosscheck(samples):
+    """Reduce once-per-second engine fps samples to a JSON-ready cross-check.
+
+    Returns a mapping with the sample count and the minimum/average/maximum of
+    the samples, or ``None`` for those three when the engine produced nothing
+    usable. The interval statistics are unaffected by this: the cross-check is a
+    second, independent view of the same run, not a replacement for it.
+    """
+    values = [float(value) for value in samples if value is not None]
+    if not values:
+        return {
+            "source": FPS_CROSSCHECK_SOURCE,
+            "samples": 0,
+            "min_fps": None,
+            "avg_fps": None,
+            "max_fps": None,
+            "semantics": FPS_CROSSCHECK_SEMANTICS,
+        }
+    return {
+        "source": FPS_CROSSCHECK_SOURCE,
+        "samples": len(values),
+        "min_fps": min(values),
+        "avg_fps": math.fsum(values) / len(values),
+        # Recorded so a single implausible sample cannot hide inside the average:
+        # this call was observed returning a ~1e6 fps outlier on UPBGE 0.50 Linux.
+        "max_fps": max(values),
+        "semantics": FPS_CROSSCHECK_SEMANTICS,
+    }
 
 
 class BenchRecorder(bge.types.KX_PythonComponent):
@@ -119,6 +185,8 @@ class BenchRecorder(bge.types.KX_PythonComponent):
         self.enabled = _env_str("RR_BENCH", "1") != "0"
         self.finished = False
         self.frame_times = []
+        self.fps_samples = []
+        self.next_fps_sample = FPS_SAMPLE_INTERVAL_S
         self.previous_at = None
 
         if not self.enabled:
@@ -174,6 +242,13 @@ class BenchRecorder(bge.types.KX_PythonComponent):
         self.previous_at = now
 
         elapsed = now - self.started_at
+        if elapsed >= self.next_fps_sample:
+            sample = _EngineProbe.average_frame_rate()
+            if sample is not None:
+                self.fps_samples.append(sample)
+            while self.next_fps_sample <= elapsed:
+                self.next_fps_sample += FPS_SAMPLE_INTERVAL_S
+
         if elapsed >= self.warmup + self.duration or now >= self.hard_deadline:
             self._finish(elapsed)
 
@@ -193,6 +268,20 @@ class BenchRecorder(bge.types.KX_PythonComponent):
             if display:
                 notes.append(f"display dimensions reported by the engine: {resolution_label(*display)}")
 
+            crosscheck = _fps_crosscheck(self.fps_samples)
+            if crosscheck["samples"]:
+                notes.append(
+                    "fps_crosscheck is the engine's own getAverageFrameRate() estimate, sampled "
+                    "once per second; it includes engine startup and the warmup window, so it "
+                    "covers a different window than the interval statistics and cannot produce "
+                    "a 1% low - those statistics remain authoritative"
+                )
+            else:
+                notes.append(
+                    "bge.logic.getAverageFrameRate() produced no usable samples; the "
+                    "fps_crosscheck is missing (the frame-interval statistics are unaffected)"
+                )
+
             report = build_report(
                 stats=stats,
                 scene_label=self.scene_label,
@@ -204,6 +293,7 @@ class BenchRecorder(bge.types.KX_PythonComponent):
                 platform=sys.platform,
                 engine=_EngineProbe.engine_name(),
                 gpu_vendor=_EngineProbe.vendor(),
+                fps_crosscheck=crosscheck,
                 notes=notes,
             )
 
@@ -225,6 +315,21 @@ class BenchRecorder(bge.types.KX_PythonComponent):
                     stats["frames_measured"],
                 )
             )
+            if crosscheck["samples"]:
+                print(
+                    "[rr] fps cross-check: getAverageFrameRate() min %.1f fps, avg %.1f fps, "
+                    "max %.1f fps over %d samples (interval avg %.1f fps - different window, "
+                    "see fps_crosscheck.semantics)"
+                    % (
+                        crosscheck["min_fps"],
+                        crosscheck["avg_fps"],
+                        crosscheck["max_fps"],
+                        crosscheck["samples"],
+                        stats["fps_avg"] or 0.0,
+                    )
+                )
+            else:
+                print("[rr] fps cross-check: getAverageFrameRate() produced no usable samples")
         finally:
             try:
                 bge.logic.endGame()

@@ -73,12 +73,17 @@ def build_report(
     engine: str | None,
     gpu_vendor: str | None,
     gpu_renderer: str | None = None,
+    fps_crosscheck: Mapping[str, Any] | None = None,
     notes: list[str] | None = None,
     captured_at: str | None = None,
 ) -> dict[str, Any]:
     """Assemble the JSON-ready benchmark report.
 
     ``ok`` is true only when the run produced measured frames.
+
+    ``fps_crosscheck`` is optional and purely additive: it carries the engine's
+    own ``getAverageFrameRate()`` samples (minimum and average) next to — never
+    in place of — the frame-interval statistics in ``stats``.
     """
     collected = list(notes or [])
     measured_frames = int(stats.get("frames_measured") or 0)
@@ -93,6 +98,11 @@ def build_report(
         )
     if gpu_renderer is None:
         collected.append(RENDERER_NOTE)
+    if fps_crosscheck is not None and not fps_crosscheck.get("samples"):
+        collected.append(
+            "fps_crosscheck is empty (getAverageFrameRate() returned no usable samples); "
+            "the frame-interval statistics are unaffected"
+        )
 
     return {
         "schema_version": SCHEMA_VERSION,
@@ -111,6 +121,7 @@ def build_report(
         "engine": engine,
         "gpu_vendor": gpu_vendor,
         "gpu_renderer": gpu_renderer,
+        "fps_crosscheck": dict(fps_crosscheck) if fps_crosscheck is not None else None,
         "stats": dict(stats),
         "captured_at": captured_at or utc_now_iso(),
         "notes": collected,

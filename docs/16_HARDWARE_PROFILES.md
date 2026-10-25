@@ -4,7 +4,7 @@ Authors did **not** have the exact specs; each owner fills their row in week 1 (
 Tiers are defined in `13_QA_PERFORMANCE_PLAN.md` §2. **P3 is Tier C** (Linux floor-spec, iGPU, 720p/native);
 the Tier B 1080p baseline belongs to the separate Acer Aspire machine and Tier A to the ASUS V16.
 
-| Field | P1 machine | P2 — ASUS V16 (Tier A) | P3 — HP ZBook 14 G2 (Tier C, Linux floor-spec) |
+| Field | P1 Aspire A515-45, Windows (Tier B) | P2 ASUS V16, Windows (Tier A) | P3 — HP ZBook 14 G2 (Tier C, Linux floor-spec) |
 |---|---|---|---|
 | Model | | ASUS V16 (exact model: ) | HP ZBook 14 G2 (product A3009D410303, board 2216, notebook) |
 | OS / version | | | Ubuntu 26.04.1 LTS, x86_64 (kernel 7.0.0-38-generic, Mesa 26.0.8 for the active iGPU; glxinfo reports Mesa 26.0.8) |
@@ -107,7 +107,7 @@ Result files (all with `"ok": true`, `resolution_verified: true`, `gpu_renderer`
 `docs/reports/bench/p3_zbook14g2_uncapped_{...}.json` (headroom). Player logs are under `docs/reports/bench/logs/`.
 
 ## Baseline scenes (still to record: Tier A + the Tier B 1080p rows)
-These rows are the **Tier B (Acer Aspire, 1080p)** and Tier A baselines; P3 (Tier C) is measured above and never runs 1080p.
+These rows are the **Tier B (P1 Aspire)** and Tier A baselines, and will be measured on the P1 Aspire, 1920x1080 verified; P3 (Tier C) is measured above and never runs 1080p.
 | Scene | Preset | Res | fps avg | fps min | notes |
 |---|---|---|---|---|---|
 | Empty scene | Low | 1080p | | | |
