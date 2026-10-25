@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "ok": true,
+  "scene": "250k",
+  "preset": "low",
+  "requested_resolution": "1280x720",
+  "actual_resolution": "1280x720",
+  "resolution_verified": true,
+  "duration_s": 60.0,
+  "warmup_s": 3.0,
+  "platform": "linux",
+  "engine": "UPBGE 5.00 (sub 1)",
+  "gpu_vendor": "AMD",
+  "gpu_renderer": "AMD Radeon R7 M260 Series (radeonsi, oland, ACO, DRM 3.64, 7.0.0-38-generic)",
+  "fps_crosscheck": {
+    "source": "bge.logic.getAverageFrameRate() sampled once per second",
+    "samples": 60,
+    "min_fps": 14.824716050492693,
+    "avg_fps": 16724.621283043198,
+    "semantics": "engine estimate, cumulative from engine start: it includes the warmup window and cannot produce a 1% low"
+  },
+  "stats": {
+    "fps_avg": 59.837874141056055,
+    "fps_min": 23.760095456682148,
+    "p1_low_fps": 58.592774865415734,
+    "frame_time_ms": {
+      "p50": 16.668825000124343,
+      "p95": 16.708361999917543,
+      "p99": 17.066950699927474,
+      "max": 42.08737299995846
+    },
+    "stutter_count": 3,
+    "frames_measured": 3331,
+    "measured_s": 55.667084565000096
+  },
+  "captured_at": "2026-10-25T13:02:59Z",
+  "notes": [
+    "measured over 63.0s of engine time from component start",
+    "display dimensions reported by the engine: 1366x768",
+    "fps_crosscheck is the engine's own getAverageFrameRate() estimate, sampled once per second; it is cumulative from engine start, so it includes the warmup window and cannot produce a 1% low - the frame-interval statistics remain authoritative",
+    "gpu_renderer is read from the player's GL_RENDERER line by the runner; the engine exposes only the vendor",
+    "DRI_PRIME=1 was requested for this run; whether that selected the discrete GPU is NOT verified \u2014 compare gpu_renderer against a no-flag run",
+    "scenes authored with vsync + use_frame_rate on: a result equal to the panel refresh rate means 'at cap', not 'headroom' (see the *uncapped* scene set for headroom)"
+  ],
+  "gl_vendor": "AMD",
+  "gl_version": "4.6 (Core Profile) Mesa 26.0.8-1ubuntu0.3",
+  "runner": {
+    "command": [
+      "/home/hicesse/portable_apps/upbge-0.50-linux-x64/blenderplayer",
+      "-f",
+      "1280",
+      "720",
+      "32",
+      "60",
+      "/home/hicesse/river-rascals/game/bench/bench250k_shadow.blend"
+    ],
+    "flags": "-f 1280 720 32 60",
+    "mode": "fullscreen",
+    "exit_code": 0,
+    "log": "/home/hicesse/.hermes_data/cache/scratch/bench-dgpu/logs/p3_zbook14g2_dgpu_probe_250k_1280x720.log",
+    "duration_s": 60.0,
+    "warmup_s": 3.0,
+    "gpu_selection_requested": "DRI_PRIME=1",
+    "scene_frame_rate_cap": "use_frame_rate=True, vsync=ON (pinned in the generator)",
+    "fixedtime_flag_passed": false,
+    "scene_suffix": "",
+    "gpu_selection_verified": null,
+    "renderer_source": "blenderplayer stdout GL_RENDERER",
+    "recorded_at": "2026-10-25T13:02:59Z"
+  }
+}

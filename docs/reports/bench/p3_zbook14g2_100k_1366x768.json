@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "ok": true,
+  "scene": "100k",
+  "preset": "low",
+  "requested_resolution": "1366x768",
+  "actual_resolution": "1366x768",
+  "resolution_verified": true,
+  "duration_s": 60.0,
+  "warmup_s": 3.0,
+  "platform": "linux",
+  "engine": "UPBGE 5.00 (sub 1)",
+  "gpu_vendor": "Intel",
+  "gpu_renderer": "Mesa Intel(R) HD Graphics 5500 (BDW GT2)",
+  "stats": {
+    "fps_avg": 59.90614686760292,
+    "fps_min": 21.455762776236735,
+    "p1_low_fps": 59.41243048650605,
+    "frame_time_ms": {
+      "p50": 16.667615996993845,
+      "p95": 16.698416800863924,
+      "p99": 16.83149455107923,
+      "max": 46.60752500058152
+    },
+    "stutter_count": 2,
+    "frames_measured": 3550,
+    "measured_s": 59.259361277996504
+  },
+  "captured_at": "2026-10-24T16:31:51Z",
+  "notes": [
+    "measured over 63.0s of engine time from component start",
+    "display dimensions reported by the engine: 1366x768",
+    "gpu_renderer is read from the player's GL_RENDERER line by the runner; the engine exposes only the vendor",
+    "no GPU-selection environment was set (DRI_PRIME unset)",
+    "scenes authored with vsync + use_frame_rate on: a result equal to the panel refresh rate means 'at cap', not 'headroom' (see the *uncapped* scene set for headroom)"
+  ],
+  "gl_vendor": "Intel",
+  "gl_version": "4.6 (Core Profile) Mesa 26.0.8-1ubuntu0.3",
+  "runner": {
+    "command": [
+      "/home/hicesse/portable_apps/upbge-0.50-linux-x64/blenderplayer",
+      "-f",
+      "1366",
+      "768",
+      "32",
+      "60",
+      "/home/hicesse/river-rascals/game/bench/bench100k.blend"
+    ],
+    "flags": "-f 1366 768 32 60",
+    "mode": "fullscreen",
+    "exit_code": 0,
+    "log": "docs/reports/bench/logs/p3_zbook14g2_100k_1366x768.log",
+    "duration_s": 60.0,
+    "warmup_s": 3.0,
+    "gpu_selection_requested": "default (no DRI_PRIME)",
+    "scene_frame_rate_cap": "use_frame_rate=True, vsync=ON (pinned in the generator)",
+    "fixedtime_flag_passed": false,
+    "scene_suffix": "",
+    "gpu_selection_verified": null,
+    "renderer_source": "blenderplayer stdout GL_RENDERER",
+    "recorded_at": "2026-10-24T16:31:52Z"
+  }
+}
