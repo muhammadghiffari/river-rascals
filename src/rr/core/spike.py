@@ -68,7 +68,7 @@ def compute_fps_stats(
 
     samples: list of (elapsed_time, fps_value) tuples, or raw float fps values.
     warmup_seconds: initial duration to discard (default 1.0s).
-    min_fps: passing threshold for used sample average (default 30.0).
+    min_fps: passing threshold; PASS when median of used samples >= min_fps (default 30.0).
     """
     raw_n = len(samples)
     norm_samples: list[tuple[float, float]] = []
@@ -106,8 +106,10 @@ def compute_fps_stats(
     avg = sum(used_values) / used_n
     min_v = min(used_values)
     med_v = float(statistics.median(used_values))
-    status = PASS if avg >= min_fps else FAIL
-    note = "avg=%.1f min=%.1f med=%.1f n=%d (raw_n=%d dropped=%d raw_max=%.1f)" % (
+    # PASS criterion is median >= min_fps (not average) so that a long tail of
+    # slow frames cannot rescue a run whose typical frame rate is too low.
+    status = PASS if med_v >= min_fps else FAIL
+    note = "avg=%.1f min=%.1f med=%.1f n=%d (raw_n=%d dropped=%d raw_max=%.1f) [criterion: median]" % (
         avg, min_v, med_v, used_n, raw_n, dropped_n, raw_max
     )
 

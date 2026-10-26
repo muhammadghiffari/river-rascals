@@ -104,22 +104,30 @@ class SpikeProbe(bge.types.KX_PythonComponent):
         self.update_count += 1
         elapsed = time.time() - self.t0
 
+        if self.update_count == 1:
+            print("[spike] update #1 started at t=%.3fs" % elapsed)
+            self._write_json(status="partial", log=True)
+
         if self.next_physics_after_check:
             self._record_physics_diag("post_check_update")
             self.next_physics_after_check = False
+            self._write_json(status="partial", log=True)
 
         if elapsed >= self.next_sample:
             self._sample_fps()
             if "physics" in self.checks:
                 self._record_physics_diag("post_check_sample")
             self.next_sample += 0.5
+            self._write_json(status="partial", log=False)
 
         if "tic_rates" not in self.checks and elapsed >= 0.5:
             self._check("tic_rates", self._probe_tic_rates)
+            self._write_json(status="partial", log=True)
 
         if "physics" not in self.checks and elapsed >= 3.0:
             self._check("physics", self._probe_physics)
             self.next_physics_after_check = True
+            self._write_json(status="partial", log=True)
 
         if elapsed >= self.duration:
             self._check("fps", self._probe_fps)
@@ -218,6 +226,10 @@ class SpikeProbe(bge.types.KX_PythonComponent):
             "speed": speed,
         }
         self.physics_diagnostics.append(entry)
+        print(
+            "[spike] diag [%s] t=%.3fs update=%d owner=%s match=%s pos=%s vel=%s tic=%s"
+            % (tag, entry["elapsed"], entry["update_count"], owner_name, box_match, pos, vel, phys_tic)
+        )
         return entry
 
     def _probe_physics(self):
@@ -355,7 +367,7 @@ class SpikeProbe(bge.types.KX_PythonComponent):
         except Exception as exc:  # noqa: BLE001
             self._note("fps", "%s: %s" % (type(exc).__name__, exc))
 
-    def _write_json(self, status: str):
+    def _write_json(self, status: str, log: bool = True):
         fps_stats = compute_fps_stats(self.samples)
         summary = summarize(self.checks)
         payload = {
@@ -393,14 +405,15 @@ class SpikeProbe(bge.types.KX_PythonComponent):
         try:
             with open(out, "w", encoding="utf-8") as fh:
                 json.dump(payload, fh, indent=2, sort_keys=True)
-            print("[spike] wrote %s (status: %s)" % (os.path.abspath(out), status))
+            if log:
+                print("[spike] wrote %s (status: %s)" % (os.path.abspath(out), status))
         except OSError as exc:
             print("[spike] could not write %s: %s" % (out, exc))
 
     def _finish(self):
         self.done = True
         self._record_physics_diag("finish")
-        self._write_json(status="complete")
+        self._write_json(status="complete", log=True)
         fps_stats = compute_fps_stats(self.samples)
         summary = summarize(self.checks)
         for line in ("", matrix_header(), matrix_row(

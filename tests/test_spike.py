@@ -184,6 +184,38 @@ class ComputeFpsStatsTests(unittest.TestCase):
         self.assertEqual(res["avg"], 60.0)
         self.assertEqual(res["median"], 60.0)
 
+    def test_median_determines_pass_when_average_below_threshold(self):
+        # 4 samples of 35.0 and 1 sample of 5.0:
+        # avg = (35*4 + 5)/5 = 145/5 = 29.0 (< 30.0)
+        # median = 35.0 (>= 30.0)
+        # Must PASS because criterion is median >= min_fps.
+        samples = [(1.0, 35.0), (1.5, 35.0), (2.0, 35.0), (2.5, 35.0), (3.0, 5.0)]
+        res = compute_fps_stats(samples, warmup_seconds=1.0, min_fps=30.0)
+        self.assertEqual(res["status"], PASS, "Must PASS based on median >= 30, even if avg < 30")
+        self.assertEqual(res["median"], 35.0)
+        self.assertEqual(res["avg"], 29.0)
+        self.assertEqual(res["min"], 5.0)
+        self.assertEqual(res["raw_max"], 35.0)
+        self.assertEqual(res["raw_n"], 5)
+        self.assertEqual(res["n"], 5)
+        self.assertEqual(res["dropped_n"], 0)
+
+    def test_median_determines_fail_when_average_above_threshold(self):
+        # 4 samples of 20.0 and 1 outlier sample of 90.0:
+        # avg = (20*4 + 90)/5 = 170/5 = 34.0 (>= 30.0)
+        # median = 20.0 (< 30.0)
+        # Must FAIL because criterion is median >= min_fps.
+        samples = [(1.0, 20.0), (1.5, 20.0), (2.0, 20.0), (2.5, 20.0), (3.0, 90.0)]
+        res = compute_fps_stats(samples, warmup_seconds=1.0, min_fps=30.0)
+        self.assertEqual(res["status"], FAIL, "Must FAIL based on median < 30, even if avg >= 30")
+        self.assertEqual(res["median"], 20.0)
+        self.assertEqual(res["avg"], 34.0)
+        self.assertEqual(res["min"], 20.0)
+        self.assertEqual(res["raw_max"], 90.0)
+        self.assertEqual(res["raw_n"], 5)
+        self.assertEqual(res["n"], 5)
+        self.assertEqual(res["dropped_n"], 0)
+
 
 class ProbePhysicsSpeedCheckTests(unittest.TestCase):
     def test_probe_physics_uses_magnitude_and_passes_at_rest(self):
@@ -316,6 +348,38 @@ class ProbePhysicsSpeedCheckTests(unittest.TestCase):
                 with open(tmp_path, encoding="utf-8") as fh:
                     data_comp = json.load(fh)
                 self.assertEqual(data_comp["status"], "complete")
+
+    def test_update_first_call_and_checkpoints_write_partial(self):
+        mock_bge = MagicMock()
+
+        class FakeComponent:
+            pass
+
+        mock_bge.types.KX_PythonComponent = FakeComponent
+
+        with patch.dict("sys.modules", {"bge": mock_bge}):
+            from rr.glue.spike_probe import SpikeProbe
+
+            probe = SpikeProbe.__new__(SpikeProbe)
+            probe.done = False
+            probe.update_count = 0
+            probe.t0 = 100.0
+            probe.next_physics_after_check = False
+            probe.next_sample = 0.5
+            probe.checks = {}
+            probe.duration = 12.0
+            probe._sample_fps = MagicMock()
+            probe._record_physics_diag = MagicMock()
+            probe._write_json = MagicMock()
+            probe._check = MagicMock()
+            probe._finish = MagicMock()
+
+            # First update call at t=100.1 (elapsed=0.1s)
+            with patch("time.time", return_value=100.1):
+                probe.update()
+
+            self.assertEqual(probe.update_count, 1)
+            probe._write_json.assert_called_with(status="partial", log=True)
 
 
 if __name__ == "__main__":
