@@ -56,6 +56,23 @@ def _cell(status: object) -> str:
     return {PASS: "PASS", FAIL: "FAIL", SKIP: "SKIP"}.get(normalize(status), "-")
 
 
+def vector_magnitude(vel: object) -> float:
+    """Return the Euclidean magnitude |v| of a 3D vector.
+
+    Distinguishes the Euclidean norm from component count: for a 3D mathutils.Vector,
+    len(vel) returns 3 (dimension), whereas vel.length returns the magnitude.
+    """
+    if vel is None:
+        return 0.0
+    if hasattr(vel, "length"):
+        return float(vel.length)  # type: ignore[union-attr]
+    try:
+        x, y, z = vel[0], vel[1], vel[2]  # type: ignore[index]
+        return float((x * x + y * y + z * z) ** 0.5)
+    except (IndexError, TypeError) as exc:
+        raise ValueError(f"Expected a 3D vector or sequence, got {vel!r}") from exc
+
+
 def matrix_header() -> str:
     """Markdown header for one run row (feature columns in CHECKS order)."""
     return "| Version | Machine | " + " | ".join(CHECKS) + " | fps_avg |"

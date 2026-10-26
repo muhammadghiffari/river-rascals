@@ -27,7 +27,15 @@ from collections import OrderedDict
 
 import bge
 
-from rr.core.spike import FAIL, PASS, SKIP, matrix_header, matrix_row, summarize
+from rr.core.spike import (
+    FAIL,
+    PASS,
+    SKIP,
+    matrix_header,
+    matrix_row,
+    summarize,
+    vector_magnitude,
+)
 
 DEFAULT_SOUND = "//../assets/audio/sfx/SFX_ToneTest_01.ogg"
 
@@ -123,7 +131,7 @@ class SpikeProbe(bge.types.KX_PythonComponent):
             return FAIL, "no SpikeBox in scene"
         z = self.box.worldPosition.z
         vel = self.box.worldLinearVelocity
-        speed = len(vel)
+        speed = vector_magnitude(vel)
         fell = self.start_z - z
         ok = fell > 1.5 and z < 1.0 and speed < 0.5
         # VERIFY: on UPBGE 0.50 Windows P2 run, box stayed at z=3.00 (fell=0.00, |v|=0.00).
