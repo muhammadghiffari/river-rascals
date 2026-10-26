@@ -7,6 +7,9 @@ of re-typing numbers.
 """
 from __future__ import annotations
 
+import math
+import statistics
+
 PASS = "pass"
 FAIL = "fail"
 SKIP = "skip"
@@ -54,6 +57,71 @@ def summarize(checks: dict[str, str]) -> dict[str, object]:
 
 def _cell(status: object) -> str:
     return {PASS: "PASS", FAIL: "FAIL", SKIP: "SKIP"}.get(normalize(status), "-")
+
+
+def compute_fps_stats(
+    samples: list[tuple[float, float] | float],
+    warmup_seconds: float = 1.0,
+    min_fps: float = 30.0,
+) -> dict[str, object]:
+    """Compute FPS statistics ignoring initial warmup and invalid samples.
+
+    samples: list of (elapsed_time, fps_value) tuples, or raw float fps values.
+    warmup_seconds: initial duration to discard (default 1.0s).
+    min_fps: passing threshold for used sample average (default 30.0).
+    """
+    raw_n = len(samples)
+    norm_samples: list[tuple[float, float]] = []
+    for s in samples:
+        if isinstance(s, (tuple, list)) and len(s) >= 2:
+            norm_samples.append((float(s[0]), float(s[1])))
+        elif isinstance(s, (int, float)):
+            norm_samples.append((warmup_seconds, float(s)))
+
+    finite_raw = [v for _, v in norm_samples if math.isfinite(v)]
+    raw_max = max(finite_raw) if finite_raw else 0.0
+
+    used_values = [
+        v for t, v in norm_samples
+        if t >= warmup_seconds and math.isfinite(v) and v > 0.0
+    ]
+    used_n = len(used_values)
+    dropped_n = raw_n - used_n
+
+    if used_n == 0:
+        return {
+            "status": FAIL,
+            "avg": 0.0,
+            "min": 0.0,
+            "median": 0.0,
+            "n": 0,
+            "raw_n": raw_n,
+            "dropped_n": dropped_n,
+            "raw_max": round(raw_max, 1),
+            "note": "no valid fps samples after %.1fs warmup (raw_n=%d dropped=%d raw_max=%.1f)" % (
+                warmup_seconds, raw_n, dropped_n, raw_max
+            ),
+        }
+
+    avg = sum(used_values) / used_n
+    min_v = min(used_values)
+    med_v = float(statistics.median(used_values))
+    status = PASS if avg >= min_fps else FAIL
+    note = "avg=%.1f min=%.1f med=%.1f n=%d (raw_n=%d dropped=%d raw_max=%.1f)" % (
+        avg, min_v, med_v, used_n, raw_n, dropped_n, raw_max
+    )
+
+    return {
+        "status": status,
+        "avg": round(avg, 1),
+        "min": round(min_v, 1),
+        "median": round(med_v, 1),
+        "n": used_n,
+        "raw_n": raw_n,
+        "dropped_n": dropped_n,
+        "raw_max": round(raw_max, 1),
+        "note": note,
+    }
 
 
 def vector_magnitude(vel: object) -> float:

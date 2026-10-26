@@ -31,6 +31,7 @@ from rr.core.spike import (
     FAIL,
     PASS,
     SKIP,
+    compute_fps_stats,
     matrix_header,
     matrix_row,
     summarize,
@@ -55,6 +56,11 @@ class SpikeProbe(bge.types.KX_PythonComponent):
         self.checks = {}
         self.notes = []
         self.samples = []
+        self.physics_diagnostics = []
+        self.update_count = 0
+        self.next_physics_after_check = False
+        self.measured_logic = None
+        self.measured_physics = None
         self.done = False
         self.t0 = time.time()
         self.next_sample = 0.5
@@ -65,7 +71,11 @@ class SpikeProbe(bge.types.KX_PythonComponent):
         self.want_physics = float(args["Physics Tic Rate"])
         self.scene = bge.logic.getCurrentScene()
         self.box = self._object("SpikeBox")
-        self.start_z = self.box.worldPosition.z if self.box else 0.0
+        self.start_z = (
+            getattr(self.box.worldPosition, "z", self.box.worldPosition[2])
+            if self.box is not None and hasattr(self.box, "worldPosition")
+            else 0.0
+        )
         self.aud_handle = None
 
         try:
@@ -73,6 +83,8 @@ class SpikeProbe(bge.types.KX_PythonComponent):
             bge.logic.setPhysicsTicRate(self.want_physics)
         except Exception as exc:  # noqa: BLE001 - record, never abort the probe
             self._note("set_tics", "%s: %s" % (type(exc).__name__, exc))
+
+        self._record_physics_diag("start")
 
         self._check("component", self._probe_component)
         self._check("play_action", self._probe_play_action)
@@ -84,18 +96,31 @@ class SpikeProbe(bge.types.KX_PythonComponent):
         self._sample_fps()
         print("[spike] engine %s on %s, %d checks recorded"
               % (self._version(), self.machine, len(self.checks)))
+        self._write_json(status="partial")
 
     def update(self):
         if self.done:
             return
+        self.update_count += 1
         elapsed = time.time() - self.t0
+
+        if self.next_physics_after_check:
+            self._record_physics_diag("post_check_update")
+            self.next_physics_after_check = False
+
         if elapsed >= self.next_sample:
             self._sample_fps()
+            if "physics" in self.checks:
+                self._record_physics_diag("post_check_sample")
             self.next_sample += 0.5
+
         if "tic_rates" not in self.checks and elapsed >= 0.5:
             self._check("tic_rates", self._probe_tic_rates)
+
         if "physics" not in self.checks and elapsed >= 3.0:
             self._check("physics", self._probe_physics)
+            self.next_physics_after_check = True
+
         if elapsed >= self.duration:
             self._check("fps", self._probe_fps)
             self._finish()
@@ -109,7 +134,14 @@ class SpikeProbe(bge.types.KX_PythonComponent):
     def _probe_tic_rates(self):
         logic = bge.logic.getLogicTicRate()
         physics = bge.logic.getPhysicsTicRate()
-        ok = abs(logic - self.want_logic) < 0.6 and abs(physics - self.want_physics) < 0.6
+        self.measured_logic = float(logic) if logic is not None else None
+        self.measured_physics = float(physics) if physics is not None else None
+        ok = (
+            self.measured_logic is not None
+            and self.measured_physics is not None
+            and abs(self.measured_logic - self.want_logic) < 0.6
+            and abs(self.measured_physics - self.want_physics) < 0.6
+        )
         # VERIFY: on UPBGE 0.50 Windows P2 run, getPhysicsTicRate() returned 0.0 even
         # though setPhysicsTicRate(60) was called in start().  Three hypotheses:
         # (a) getter returns 0 before first Bullet step (probe fires at t≥0.5 s, but
@@ -117,33 +149,109 @@ class SpikeProbe(bge.types.KX_PythonComponent):
         # (c) Bullet disabled (would also explain physics FAIL below).
         # Record the raw value so the next run can distinguish them.
         physics_zero_note = ""
-        if physics == 0.0:
+        if self.measured_physics == 0.0:
             physics_zero_note = (
                 "; physics=0.0 — possible causes: getter uninitialized before first "
                 "physics step, API change, or Bullet disabled; see §6.8"
             )
-        note = "logic=%.1f physics=%.1f (wanted %.0f/%.0f)%s" % (
-            logic, physics, self.want_logic, self.want_physics, physics_zero_note)
+        note = "measured: logic=%.1f physics=%.1f (setpoint: logic=%.0f physics=%.0f)%s" % (
+            self.measured_logic if self.measured_logic is not None else -1.0,
+            self.measured_physics if self.measured_physics is not None else -1.0,
+            self.want_logic,
+            self.want_physics,
+            physics_zero_note,
+        )
         return (PASS if ok else FAIL), note
 
+    def _record_physics_diag(self, tag: str = ""):
+        elapsed = time.time() - self.t0
+        fresh_box = self._object("SpikeBox")
+        cached_box = self.box
+        box_match = (
+            (cached_box is fresh_box)
+            if (cached_box is not None and fresh_box is not None)
+            else False
+        )
+        target = fresh_box or cached_box
+
+        owner_obj = getattr(self, "object", None)
+        owner_name = (
+            getattr(owner_obj, "name", "unknown")
+            if owner_obj is not None
+            else "none"
+        )
+
+        pos = (
+            [round(float(v), 4) for v in target.worldPosition]
+            if target is not None and hasattr(target, "worldPosition")
+            else None
+        )
+        vel = (
+            [round(float(v), 4) for v in target.worldLinearVelocity]
+            if target is not None and hasattr(target, "worldLinearVelocity")
+            else None
+        )
+        speed = (
+            round(vector_magnitude(target.worldLinearVelocity), 4)
+            if target is not None and hasattr(target, "worldLinearVelocity")
+            else None
+        )
+
+        phys_tic = None
+        if hasattr(bge.logic, "getPhysicsTicRate"):
+            try:
+                phys_tic = float(bge.logic.getPhysicsTicRate())
+            except Exception:  # noqa: BLE001
+                phys_tic = None
+
+        entry = {
+            "tag": tag,
+            "elapsed": round(elapsed, 4),
+            "update_count": self.update_count,
+            "owner": owner_name,
+            "physics_tic_rate": phys_tic,
+            "box_cached_id": id(cached_box) if cached_box is not None else None,
+            "box_fresh_id": id(fresh_box) if fresh_box is not None else None,
+            "box_match": box_match,
+            "position": pos,
+            "velocity": vel,
+            "speed": speed,
+        }
+        self.physics_diagnostics.append(entry)
+        return entry
+
     def _probe_physics(self):
+        diag = self._record_physics_diag("check")
         if not self.box:
             return FAIL, "no SpikeBox in scene"
-        z = self.box.worldPosition.z
+        z = getattr(self.box.worldPosition, "z", self.box.worldPosition[2])
         vel = self.box.worldLinearVelocity
         speed = vector_magnitude(vel)
         fell = self.start_z - z
         ok = fell > 1.5 and z < 1.0 and speed < 0.5
-        # VERIFY: on UPBGE 0.50 Windows P2 run, box stayed at z=3.00 (fell=0.00, |v|=0.00).
-        # Record vx/vy/vz to disambiguate on the next run:
+        # VERIFY: on UPBGE 0.50 Windows P2 run, box stayed at z=3.00 (fell=0.00).
+        # Record vx/vy/vz and diagnostics to disambiguate on the next run:
         #   vz<0 and vx,vy≈0 → gravity correct axis, timing; check fell at later t.
         #   vy≠0 and vz≈0 → gravity on +Y (forward) not -Z (up); generator needs
         #     scene.game_settings.physics_gravity direction check.
         #   all v≈0 → Bullet not running; root cause shared with tic_rates FAIL.
-        note = ("z=%.2f start_z=%.2f fell=%.2f |v|=%.2f "
-                "vx=%.2f vy=%.2f vz=%.2f") % (
-            z, self.start_z, fell, speed,
-            vel[0], vel[1], vel[2])
+        note = (
+            "z=%.2f start_z=%.2f fell=%.2f |v|=%.2f "
+            "vx=%.2f vy=%.2f vz=%.2f (updates=%d elapsed=%.2fs owner=%s match=%s phys_tic=%s)"
+        ) % (
+            z,
+            self.start_z,
+            fell,
+            speed,
+            vel[0],
+            vel[1],
+            vel[2],
+            diag["update_count"],
+            diag["elapsed"],
+            diag["owner"],
+            diag["box_match"],
+            diag["physics_tic_rate"],
+        )
         return (PASS if ok else FAIL), note
 
     def _probe_play_action(self):
@@ -236,45 +344,67 @@ class SpikeProbe(bge.types.KX_PythonComponent):
             tuple(round(v, 2) for v in pos), self.aud_handle.relative)
 
     def _probe_fps(self):
-        if not self.samples:
-            return FAIL, "no fps samples (probe ran shorter than one sample)"
-        avg = sum(self.samples) / len(self.samples)
-        return (PASS if avg >= 30.0 else FAIL), "avg=%.1f min=%.1f n=%d" % (
-            avg, min(self.samples), len(self.samples))
+        stats = compute_fps_stats(self.samples)
+        return stats["status"], str(stats["note"])
 
     # -- reporting ---------------------------------------------------------
     def _sample_fps(self):
         try:
-            self.samples.append(float(bge.logic.getAverageFrameRate()))
+            elapsed = time.time() - self.t0
+            self.samples.append((elapsed, float(bge.logic.getAverageFrameRate())))
         except Exception as exc:  # noqa: BLE001
             self._note("fps", "%s: %s" % (type(exc).__name__, exc))
 
-    def _finish(self):
-        self.done = True
-        avg = sum(self.samples) / len(self.samples) if self.samples else 0.0
+    def _write_json(self, status: str):
+        fps_stats = compute_fps_stats(self.samples)
         summary = summarize(self.checks)
         payload = {
+            "status": status,
             "machine": self.machine,
-            "engine": {"version": self._version(), "platform": sys.platform,
-                       "python": sys.version.split()[0]},
+            "engine": {
+                "version": self._version(),
+                "platform": sys.platform,
+                "python": sys.version.split()[0],
+            },
             "window": self._window(),
-            "tic": {"logic": self.want_logic, "physics": self.want_physics},
+            "tic": {
+                "setpoint": {"logic": self.want_logic, "physics": self.want_physics},
+                "measured": {
+                    "logic": self.measured_logic,
+                    "physics": self.measured_physics,
+                },
+            },
             "checks": self.checks,
             "summary": summary,
-            "fps": {"avg": round(avg, 1),
-                    "min": round(min(self.samples), 1) if self.samples else 0.0,
-                    "n": len(self.samples)},
-            "notes": self.notes,
+            "fps": {
+                "avg": fps_stats["avg"],
+                "min": fps_stats["min"],
+                "median": fps_stats["median"],
+                "n": fps_stats["n"],
+                "raw_n": fps_stats["raw_n"],
+                "dropped_n": fps_stats["dropped_n"],
+                "raw_max": fps_stats["raw_max"],
+                "status": fps_stats["status"],
+            },
+            "notes": list(self.notes),
+            "physics_diagnostics": list(self.physics_diagnostics),
         }
         out = os.environ.get("RR_SPIKE_OUT", "spike_result.json")
         try:
             with open(out, "w", encoding="utf-8") as fh:
                 json.dump(payload, fh, indent=2, sort_keys=True)
-            print("[spike] wrote %s" % os.path.abspath(out))
+            print("[spike] wrote %s (status: %s)" % (os.path.abspath(out), status))
         except OSError as exc:
             print("[spike] could not write %s: %s" % (out, exc))
+
+    def _finish(self):
+        self.done = True
+        self._record_physics_diag("finish")
+        self._write_json(status="complete")
+        fps_stats = compute_fps_stats(self.samples)
+        summary = summarize(self.checks)
         for line in ("", matrix_header(), matrix_row(
-                self._version(), self.machine, self.checks, avg), ""):
+                self._version(), self.machine, self.checks, float(fps_stats["avg"])), ""):
             print("[spike] " + line)
         print("[spike] summary %s" % json.dumps(summary, sort_keys=True))
         if not self.hold:
