@@ -406,9 +406,9 @@ and the 0.44.x rows exist.
 
 #### Finding F-2 — `physics` FAIL: box never fell (`z=3.00`, `fell=0.00`)
 
-- Probe note: `z=3.00 start_z=3.00 fell=0.00 |v|=0.00`.
+- Observed outcome: `z=3.00 start_z=3.00 fell=0.00` — box never fell.
 - Saved scene: `SpikeBox` RIGID_BODY, mass 5, BOX collision, Bullet physics engine, gravity 9.81.
-- Box did not move at all; velocity magnitude was 0.0.
+- Velocity measurement unconfirmed: raw JSON and transcript are not available locally; the pre-fix probe calculated speed using `len(vel)` (which evaluates to dimension 3 for `mathutils.Vector`), so any prior assertion of `|v|=0.00` is unverified.
 - The updated probe records `vx`, `vy`, `vz` separately on the next run, enabling disambiguation:
   - `vz<0` → gravity on correct axis, probe timing issue (fell value too small at t=3 s).
   - `vy≠0, vz≈0` → gravity acting on wrong axis (+Y forward, not −Z up).
