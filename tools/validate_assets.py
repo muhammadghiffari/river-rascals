@@ -31,10 +31,12 @@ def main() -> int:
         return 0
     failed = 0
     for f in files:
-        r = subprocess.run([blender, "-b", str(f), "--python", str(SCRIPT)],
+        r = subprocess.run([blender, "-b", str(f), "--python-exit-code", "1", "--python", str(SCRIPT)],
                            capture_output=True, text=True)
         lines = [ln for ln in r.stdout.splitlines() if ln.startswith("[validate]")]
-        status = "OK  " if r.returncode == 0 and not any("FAIL" in ln for ln in lines) else "FAIL"
+        complete = "[validate] 0 problem(s)" in lines
+        passed = complete and r.returncode == 0 and not any("FAIL" in ln for ln in lines)
+        status = "OK  " if passed else "FAIL"
         failed += status == "FAIL"
         print(f"{status} {f}")
         for ln in lines:
