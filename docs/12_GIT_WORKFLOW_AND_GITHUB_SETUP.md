@@ -38,6 +38,10 @@ python -m unittest discover -s tests
 6. P2 only: Blender MCP setup (`docs/08` §3). P3 only: fill `docs/16`, run the baseline scenes.
 7. Pick your first issue from the board (P2: F-04; P3: F-05) → branch → PR.
 
+**Before every PR**: `ruff check src tests tools scripts game` (plus `python -m unittest discover -s tests`). Work through OpenCode or Hermes — either must load `AGENTS.md`.
+**Linux**: `python-is-python3` gives you a `python` command; install the pinned linter with `uv tool install ruff==0.17.2`.
+**Windows**: `setx` only affects new terminals — reopen the terminal before checking the variable.
+
 ## 8. Daily commands
 ```bash
 git switch main && git pull --rebase           # start of day
@@ -55,11 +59,11 @@ Never: `git push --force`, committing `.env`, working on `main`.
 ## 10. Setup log (owner's agent fills)
 | Date | Item | Result / evidence |
 |---|---|---|
-| | Repo URL, visibility | |
-| | Branch protection status | |
-| | LFS quota (storage/bandwidth) | |
-| | CI first green run | |
-| | Collaborators accepted | |
+| 2026-10-24 | Repo URL, visibility | `muhammadghiffari/river-rascals` — **private** |
+| 2026-10-24 | Branch protection status | **OK** — 1 review + required check `test`, strict (branch up to date) |
+| 2026-10-24 | LFS quota (storage/bandwidth) | LFS **active**; quota not measured yet |
+| 2026-10-23 | CI first green run | **green on `main`** |
+| 2026-10-24 | Collaborators accepted | **Catalna**, **hicesse** |
 
 ## 11. Backups
 Repo is the source of truth; additionally P1 keeps a monthly `git bundle` + LFS objects copy on an external drive/cloud (`git bundle create ../rr.bundle --all`; `git lfs fetch --all`).

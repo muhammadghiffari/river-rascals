@@ -15,6 +15,12 @@ RECOMMENDED = {"uv": ["uv", "--version"], "opencode": ["opencode", "--version"],
 
 
 def ver(cmd):
+    # Resolve through PATH first: on Windows npm/pip shims are .cmd files and
+    # subprocess only finds them when given the full path from PATHEXT.
+    exe = shutil.which(cmd[0])
+    if exe is None:
+        return None
+    cmd = [exe, *cmd[1:]]
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
         out = (r.stdout or r.stderr).strip().splitlines()
