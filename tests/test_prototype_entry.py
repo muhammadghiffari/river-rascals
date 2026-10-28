@@ -10,7 +10,7 @@ import math
 import sys
 import unittest
 from collections import defaultdict
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -131,9 +131,15 @@ class FakeDevice:
 
 
 class Harness:
-    """Builds the fake engine, imports the adapter fresh and drives frames."""
+    """Builds the fake engine, loads the adapter and drives frames.
 
-    def __init__(self):
+    Teardown is registered with the test case's `addCleanup` as soon as each
+    patch goes live, so a failure part-way through construction still reverts
+    `sys.modules`. Previously a raise between `patch.start()` and cleanup
+    registration leaked the fake `bge`/`aud` into every later test.
+    """
+
+    def __init__(self, cleanup):
         self.body = FakeBody(4.0)
         self.camera = FakeCamera()
         self.hud, self.prompt = FakeText(), FakeText()
@@ -153,20 +159,18 @@ class Harness:
             events=SimpleNamespace(**KEY_CODES),
         )
         self.aud = SimpleNamespace(Device=lambda: self.device, Sound=lambda path: path)
-        self.patch = patch.dict(sys.modules, {"bge": self.bge, "aud": self.aud})
-        self.patch.start()
-        sys.modules.pop("prototype_entry", None)
+        patcher = patch.dict(sys.modules, {"bge": self.bge, "aud": self.aud})
+        patcher.start()
+        cleanup(patcher.stop)
+        # A private module object per test, rather than mutating the import
+        # cache: module globals such as `_SESSION` and the cached HUD setters
+        # start clean every time and nothing has to be deleted afterwards.
         spec = importlib.util.spec_from_file_location(
             "prototype_entry", ROOT / "game" / "prototype_entry.py")
         self.module = importlib.util.module_from_spec(spec)
-        sys.modules["prototype_entry"] = self.module
         spec.loader.exec_module(self.module)
         self.session = self.module.Session(self.scene)
-
-    def stop(self):
-        self.session.audio.close()
-        sys.modules.pop("prototype_entry", None)
-        self.patch.stop()
+        cleanup(self.session.audio.close)
 
     def hold(self, *names):
         for code in KEY_CODES.values():
@@ -178,14 +182,20 @@ class Harness:
         for _ in range(count):
             self.session.update()
 
-    def cues(self, prefix):
-        return [p for p in self.device.played if prefix in p]
+    def cues(self, fragment):
+        """Find played cues by logical path, independent of host separator.
+
+        The adapter hands `aud` a native filesystem path, so on Windows the
+        recorded string is `...\\audio\\music\\MUS_Menu_01.ogg`. Matching a
+        forward-slash fragment against that raw string never succeeds, which is
+        why only the slash-bearing assertions failed there.
+        """
+        return [p for p in self.device.played if fragment in p.replace("\\", "/")]
 
 
 class EntryTests(unittest.TestCase):
     def setUp(self):
-        self.h = Harness()
-        self.addCleanup(self.h.stop)
+        self.h = Harness(self.addCleanup)
 
     def test_starts_in_menu_with_menu_music_and_prompt(self):
         self.assertEqual(self.h.session.game.mode, "menu")
@@ -301,6 +311,72 @@ class EntryTests(unittest.TestCase):
         self.h.frames(60)
         self.assertGreater(self.h.camera.worldPosition.y, before)
         self.assertAlmostEqual(self.h.camera.worldPosition.y, 100.0 - 10.5, delta=1.0)
+
+    def test_cue_matching_is_separator_independent(self):
+        """A Windows-flavoured path must still match its logical cue."""
+        self.h.device.played.append("C:\\repo\\assets\\audio\\music\\MUS_Menu_01.ogg")
+        self.assertTrue(self.h.cues("music/MUS_Menu_01.ogg"))
+
+
+class PathFlavourTests(unittest.TestCase):
+    """The adapter hands `aud` a native path, so cue assertions must normalise.
+
+    Regression for the two tests that failed only on Windows. `PrototypeAudio`
+    builds `Path(root) / "assets" / "audio" / "music/MUS_Menu_01.ogg"`, which
+    renders with backslashes there. Fragments without a separator
+    (`"SFX_PaddleDip"`) matched anyway, which is why exactly the three
+    slash-bearing assertions broke and nothing else did.
+    """
+
+    def _play_menu(self, flavour):
+        from rr.glue import prototype_audio as glue
+
+        device = FakeDevice()
+        aud = SimpleNamespace(Device=lambda: device, Sound=lambda path: path)
+        with patch.dict(sys.modules, {"aud": aud}), patch.object(glue, "Path", flavour):
+            audio = glue.PrototypeAudio("C:/repo")
+            self.addCleanup(audio.close)
+            audio.set_mode("menu")
+        self.assertEqual(audio.error_count, 0, list(audio.errors))
+        self.assertEqual(len(device.played), 1)
+        return device.played[0]
+
+    def test_windows_paths_use_backslashes_and_still_resolve(self):
+        played = self._play_menu(PureWindowsPath)
+        self.assertIn("\\", played)
+        # The pre-fix assertion style silently failed on exactly this string.
+        self.assertNotIn("music/MUS_Menu_01.ogg", played)
+        self.assertIn("music/MUS_Menu_01.ogg", played.replace("\\", "/"))
+
+    def test_posix_paths_are_unaffected(self):
+        played = self._play_menu(PurePosixPath)
+        self.assertNotIn("\\", played)
+        self.assertIn("music/MUS_Menu_01.ogg", played)
+
+
+class IsolationTests(unittest.TestCase):
+    """Teardown must be deterministic, with no import-cache surgery."""
+
+    def test_construction_failure_still_reverts_sys_modules(self):
+        baseline = {name: name in sys.modules for name in ("bge", "aud")}
+        cleanups = []
+        with patch.object(importlib.util, "module_from_spec", side_effect=RuntimeError("boom")):
+            with self.assertRaises(RuntimeError):
+                Harness(cleanups.append)
+        self.assertTrue(cleanups, "no cleanup was registered before the failure")
+        for undo in reversed(cleanups):
+            undo()
+        self.assertEqual({name: name in sys.modules for name in ("bge", "aud")}, baseline)
+
+    def test_harness_does_not_touch_the_import_cache(self):
+        before = "prototype_entry" in sys.modules
+        cleanups = []
+        harness = Harness(cleanups.append)
+        self.assertIsNone(harness.module.__dict__.get("_SESSION"))
+        self.assertEqual("prototype_entry" in sys.modules, before,
+                         "the harness must not register its private module globally")
+        for undo in reversed(cleanups):
+            undo()
 
 
 class ResourceTests(unittest.TestCase):
