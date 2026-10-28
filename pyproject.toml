@@ -20,6 +20,7 @@ extend-immutable-calls = ["rr.core.buoyancy.BuoyancyConfig", "rr.core.oar.OarCon
 [tool.ruff.lint.per-file-ignores]
 "src/rr/glue/*" = ["F401"]          # bge/mathutils only importable inside UPBGE
 "game/rr_components.py" = ["F401", "E402"]
+"game/prototype_entry.py" = ["E402"]   # sys.path must be extended before rr.* imports
 "tools/blender/*" = ["E402"]
 
 [tool.pytest.ini_options]

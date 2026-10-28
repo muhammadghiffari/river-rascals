@@ -1,0 +1,45 @@
+{
+  "source_sha256": {
+    "assets/raft/RF_RaftT1.blend": "529f0bc3c78d711664b0420d5994d26dfc5e4407e7b28a1d13952bfe1fad58c4",
+    "assets/raft/RF_Oar.blend": "3cf16070eac0e567171d782b4c1e3323626fc07a840b87935876e8be7099527b",
+    "assets/props/PR_RockLarge.blend": "6f7c6b234747665fbb6f834f9207e242cac23cf614f4a59ab4cb48e698ce155a"
+  },
+  "approved_raft_dimensions": [
+    2.4000000953674316,
+    3.1999995708465576,
+    0.4000000059604645
+  ],
+  "original_glb_dimensions_xyz": [
+    11.964097023010254,
+    4.30204439163208,
+    23.645095825195312
+  ],
+  "source_width_length_height": [
+    11.964097023010254,
+    23.645095825195312,
+    4.30204439163208
+  ],
+  "runtime_width_length_height": [
+    2.428734742079433,
+    4.8,
+    0.8733232985180094
+  ],
+  "uniform_scale_from_source": 0.20300192629734673,
+  "runtime_raft_dimensions": [
+    2.42873477935791,
+    4.800000190734863,
+    0.873323380947113
+  ],
+  "scene_triangles": 12532,
+  "scene_objects": 55,
+  "rock_obstacles": 9,
+  "hud_objects": [
+    "UI_HudText",
+    "UI_PromptText"
+  ],
+  "controller_module": "prototype_entry.tick",
+  "logic_wired": true,
+  "vegetation": "original seeded procedural geometry, seed 2317",
+  "sensor": "Tick",
+  "controller": "Prototype"
+}

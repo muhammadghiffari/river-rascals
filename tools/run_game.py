@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import platform
 import shutil
 import subprocess
 import sys
@@ -30,6 +31,20 @@ def find_exe(name: str) -> str:
         if found:
             return found
     sys.exit(f"Cannot find '{name}'. Set UPBGE_PATH to the UPBGE folder.")
+
+
+def host_path(path: str | Path, exe: str) -> str:
+    """Translate a path for the executable that will open it.
+
+    A Windows blender.exe driven from WSL cannot open `/mnt/c/...`; it needs
+    `C:\\...`. Without this, Blender fails to read the file and `--python-exit-code`
+    turns that into a non-zero exit, which the asset gate reports as a failure.
+    """
+    if platform.system() == "Linux" and exe.lower().endswith(".exe"):
+        done = subprocess.run(["wslpath", "-w", str(path)], capture_output=True, text=True)
+        if done.returncode == 0 and done.stdout.strip():
+            return done.stdout.strip()
+    return str(path)
 
 
 def main() -> int:

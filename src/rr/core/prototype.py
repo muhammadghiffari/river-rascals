@@ -110,3 +110,26 @@ class Prototype:
         self.respawn_pending = False
         self.hull = self.cfg.max_hull
         self.cooldown = 1.5
+
+
+def hud_text(game, speed):
+    """Single-line status readout. Pure formatting so it is testable without UPBGE."""
+    hull = "#" * game.hull + "." * (game.cfg.max_hull - game.hull)
+    return (f"{game.mode.upper()}   hull [{hull}]   {game.progress * 100:3.0f}%"
+            f"   {game.elapsed:5.1f}s   {speed:4.1f} m/s   bumps {game.hits}")
+
+
+def prompt_text(game):
+    """Centred prompt for the non-playing modes; empty while the slice is running."""
+    if game.mode == "menu":
+        return ("RIVER RASCALS - Catalna slice\n"
+                "ENTER or click to start\n"
+                "A / LEFT and D / RIGHT paddle, S reverse\n"
+                "P pause, ESC menu, Q quit")
+    if game.mode == "paused":
+        return "PAUSED\nP resume, ESC menu, Q quit"
+    if game.mode == "complete":
+        return (f"FINISH in {game.elapsed:.1f}s with {game.hits} bumps\n"
+                "ENTER or click to run again\n"
+                "ESC menu, Q quit")
+    return ""

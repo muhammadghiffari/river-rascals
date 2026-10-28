@@ -18,18 +18,23 @@ class EventSpec:
     vary_pitch: bool = True
 
 
-# Conservative gain staging: six SFX plus both ambience loops remain below full scale.
+# Conservative gain staging: MAX_VOICES one-shots plus both ambience loops stay below full scale.
+# The three paddle cues map onto the rr.core.oar phase machine: DIP -> PULL -> RECOVER.
 EVENTS = {
+    "paddle_dip": EventSpec("sfx/SFX_PaddleDip", 3, 0.10, 0.10),
     "paddle": EventSpec("sfx/SFX_PaddlePull", 3, 0.12, 0.12),
+    "paddle_exit": EventSpec("sfx/SFX_PaddleExit", 3, 0.12, 0.09),
     "splash": EventSpec("sfx/SFX_SplashSmall", 4, 0.20, 0.12),
     "bump_soft": EventSpec("sfx/SFX_RaftBumpSoft", 3, 0.25, 0.12),
     "bump_hard": EventSpec("sfx/SFX_RaftBumpHard", 3, 0.40, 0.16),
     "click": EventSpec("ui/UI_Click", 1, 0.08, 0.10, False),
     "hover": EventSpec("ui/UI_Hover", 1, 0.10, 0.06, False),
 }
+# docs/06 section 9: pause silences everything except UI, so "paused" carries no loop.
 MODE_LOOPS = {
     "menu": (("music/MUS_Menu_01.ogg", 0.25),),
     "playing": (("ambience/AMB_Creek_01.ogg", 0.18), ("sfx/SFX_WaterRushLoop_01.ogg", 0.12)),
+    "paused": (),
     "complete": (("music/MUS_Menu_01.ogg", 0.25),),
 }
 

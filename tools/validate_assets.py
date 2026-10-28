@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from run_game import find_exe  # noqa: E402
+from run_game import find_exe, host_path  # noqa: E402
 
 SCRIPT = Path(__file__).parent / "blender" / "validate_blend.py"
 
@@ -30,8 +30,10 @@ def main() -> int:
         print("No .blend files found - nothing to validate.")
         return 0
     failed = 0
+    script = host_path(SCRIPT, blender)
     for f in files:
-        r = subprocess.run([blender, "-b", str(f), "--python-exit-code", "1", "--python", str(SCRIPT)],
+        r = subprocess.run([blender, "-b", host_path(f, blender),
+                            "--python-exit-code", "1", "--python", script],
                            capture_output=True, text=True)
         lines = [ln for ln in r.stdout.splitlines() if ln.startswith("[validate]")]
         complete = "[validate] 0 problem(s)" in lines

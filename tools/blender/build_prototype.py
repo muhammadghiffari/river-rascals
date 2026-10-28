@@ -10,13 +10,16 @@ import random
 from pathlib import Path
 
 import bpy
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 ROOT = Path(__file__).resolve().parents[2]
 CFG = json.loads((ROOT / "game/settings/prototype.json").read_text())
 RNG = random.Random(2317)
 SOURCES = ["assets/raft/RF_RaftT1.blend", "assets/raft/RF_Oar.blend",
            "assets/props/PR_RockLarge.blend"]
+# Single source of truth for the controller target; the windowed wiring pass
+# reads it back out of the manifest so the two passes cannot drift apart.
+CONTROLLER_MODULE = "prototype_entry.tick"
 
 
 def material(name, color, emission=0.18):
@@ -90,7 +93,7 @@ def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
     scene.name = "CatalnaCreek"
-    scene.render.engine = "BLENDER_EEVEE_NEXT"
+    scene.render.engine = "BLENDER_EEVEE"
     scene.render.resolution_x, scene.render.resolution_y = 1280, 720
     scene.game_settings.resolution_x, scene.game_settings.resolution_y = 1280, 720
     scene.game_settings.fps = 60
@@ -154,12 +157,16 @@ def main():
                 (CFG["raft_width"], CFG["raft_length"], CFG["raft_height"]), coral)
     physics(body, "RIGID_BODY")
     body.game.mass = CFG["mass"]
-    body.game.use_rotation_x = False
-    body.game.use_rotation_y = False
-    body.game.use_sleep = False
+    # rr.core.prototype models heave and yaw only, so Bullet must not roll or pitch
+    # the hull. docs/07 section 2 also keeps the raft awake for the whole run:
+    # "No Sleeping" (use_sleep) disables auto-deactivation.
+    body.game.lock_rotation_x = True
+    body.game.lock_rotation_y = True
+    body.game.use_sleep = True
     body.game.damping = 0.03
     body.game.rotation_damping = 0.1
     body.game.use_ghost = False
+    body.game.use_actor = True
     body.hide_render = True
     hull.parent = body
     oar = load_meshes(SOURCES[1])[0]
@@ -201,27 +208,50 @@ def main():
     sun = bpy.data.objects.new("EN_Sun", sun_data)
     scene.collection.objects.link(sun)
     sun.rotation_euler = (0.5, -0.4, -0.6)
+    # Follow camera: prototype_entry.CAMERA_OFFSET slides this rig along the river,
+    # so the rest pose must already frame the raft with the water ahead visible.
     camera = bpy.data.objects.new("Cam_Main", bpy.data.cameras.new("Cam_Main"))
     scene.collection.objects.link(camera)
-    camera.location = (0, -12, 18)
-    camera.rotation_euler = (Vector((0, 10, 0)) - camera.location).to_track_quat("-Z", "Y").to_euler()
+    camera.location = (0, CFG["start_y"] - 10.5, 6.5)
+    aim = Vector((0, CFG["start_y"] + 8, 0))
+    camera.rotation_euler = (aim - camera.location).to_track_quat("-Z", "Y").to_euler()
     camera.data.lens = 35
-    camera.data.clip_end = 160
+    camera.data.clip_end = 260
     scene.camera = camera
+
+    # HUD text parented in camera space. Identity parent-inverse keeps the local
+    # offsets below in camera coordinates; Blender text faces +Z, the camera looks
+    # down -Z, so a child at negative local z faces the lens. At z=-2 with a 35mm
+    # lens on a 36mm sensor the visible half-extents are x 1.027 and y 0.578.
+    hud_objects = []
+    for name, location, size, align, initial in (
+        ("UI_HudText", (-0.96, 0.54, -2.0), 0.045, "LEFT", "MENU"),
+        ("UI_PromptText", (0.0, -0.09, -2.0), 0.060, "CENTER", "RIVER RASCALS"),
+    ):
+        bpy.ops.object.text_add(location=(0, 0, 0))
+        text = bpy.context.object
+        text.name = name
+        text.data.name = name
+        text.data.body = initial
+        text.data.size = size
+        text.data.align_x = align
+        text.data.align_y = "TOP"
+        text.data.materials.append(cream)
+        physics(text)
+        text.parent = camera
+        text.matrix_parent_inverse = Matrix.Identity(4)
+        text.location = location
+        text.rotation_euler = (0, 0, 0)
+        hud_objects.append(text)
 
     root = bpy.data.objects.new("PrototypeRoot", None)
     scene.collection.objects.link(root)
-    bpy.context.view_layer.objects.active = root
-    bpy.ops.object.select_all(action="DESELECT")
-    root.select_set(True)
-    bpy.ops.logic.sensor_add(type="ALWAYS", name="Tick", object=root.name)
-    sensor = root.game.sensors[-1]
-    sensor.use_pulse_true_level = True
-    bpy.ops.logic.controller_add(type="PYTHON", name="Prototype", object=root.name)
-    controller = root.game.controllers[-1]
-    controller.mode = "MODULE"
-    controller.module = "prototype_entry.tick"
-    sensor.link(controller)
+    # The Always sensor and Python controller are NOT added here. In this UPBGE
+    # build `bpy.ops.logic.sensor_add` dereferences null in `-b` (access violation)
+    # and its poll needs a real window, while the object-creation operators above
+    # need the background context (S-01 section 6.7). Geometry is therefore built
+    # headless and `tools/blender/wire_prototype_logic.py` attaches the logic
+    # bricks in a second, windowed pass. `tools/build_prototype_scene.py` runs both.
     for image in bpy.data.images:
         if image.source == "FILE":
             image.pack()
@@ -230,10 +260,23 @@ def main():
     bpy.ops.wm.save_as_mainfile(filepath=str(ROOT / "game/main.blend"))
     tris = sum(sum(len(poly.vertices) - 2 for poly in obj.data.polygons)
                for obj in scene.objects if obj.type == "MESH")
+    # The approved asset was squashed non-uniformly to a historical 2.4x3.2x0.4 box.
+    # Rescaling it to the configured rubber-raft size must restore a single uniform
+    # factor against the original GLB, otherwise the hull is visibly distorted again.
+    source_wlh = (11.964097023010254, 23.645095825195312, 4.30204439163208)
+    runtime_wlh = (CFG["raft_width"], CFG["raft_length"], CFG["raft_height"])
+    ratios = [runtime_wlh[i] / source_wlh[i] for i in range(3)]
+    assert max(ratios) - min(ratios) < 1e-6, f"raft scale is not uniform: {ratios}"
     manifest = {"source_sha256": hashes, "approved_raft_dimensions": original_dimensions,
                 "original_glb_dimensions_xyz": [11.964097023010254, 4.30204439163208, 23.645095825195312],
+                "source_width_length_height": list(source_wlh),
+                "runtime_width_length_height": list(runtime_wlh),
+                "uniform_scale_from_source": sum(ratios) / 3,
                 "runtime_raft_dimensions": list(hull.dimensions), "scene_triangles": tris,
                 "scene_objects": len(scene.objects), "rock_obstacles": len(layout),
+                "hud_objects": [obj.name for obj in hud_objects],
+                "controller_module": CONTROLLER_MODULE,
+                "logic_wired": False,
                 "vegetation": "original seeded procedural geometry, seed 2317"}
     assert tris < 250000
     assert hashes == {path: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for path in SOURCES}
