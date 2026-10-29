@@ -24,7 +24,14 @@ Last automated run: 2026-10-23 (Linux sandbox, Python 3.12, OpenCode 1.19.4). No
 ## 3. Manual checklist for the agents (per machine, during M0/M1)
 1. Download the pinned **stable** UPBGE (0.50, Blender 5.0.1; not weekly alpha), extract anywhere, set `UPBGE_PATH` to the folder containing `blenderplayer`/`blender`; run `python scripts/check_env.py` until READY.
 2. Record version + SHA-256 in `docs/03` section 2 (S-01).
-3. Generate/open the spike scene, run `python tools/run_game.py game/<scene>.blend --smoke --seconds 20`; fix each `VERIFY` item found, replacing guesses with facts, in small PRs.
+3. Run the S-01 spike probe out of `docs/reports/S-01_engine_decision.md` §2.1–2.3: generate the scene **windowed**, export the `RR_SPIKE_*` variables, then launch it in `blenderplayer` through `run_game.py`. Do **not** add `--smoke` here — the spike is driven by `RR_SPIKE_*`, while `--smoke` only sets `RR_SMOKE`/`RR_SMOKE_SECONDS`/`RR_SMOKE_OUT` and then exits with `SMOKE FAIL: no result file written` because the spike scene carries no smoke component:
+   ```bash
+   "$UPBGE_PATH/blender" --python tools/blender/gen_spike_engine.py -- --out game/spike_engine.blend
+   export RR_SPIKE_MACHINE=P3 RR_SPIKE_SECONDS=12 RR_SPIKE_OUT=spike_P3_0.50.json   # Windows: $env:RR_SPIKE_*
+   python tools/run_game.py game/spike_engine.blend
+   cat spike_P3_0.50.json
+   ```
+   Then fix each `VERIFY` item found, replacing guesses with facts, in small PRs.
 4. P2: Blender MCP check (`docs/08` section 8). P3: fill `docs/16` and baseline scenes.
 5. Real bootstrap only after the dry-run output is reviewed (`docs/00` section 3).
 Rule: report any failure honestly; never mark VERIFY items done without the command output.
