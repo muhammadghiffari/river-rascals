@@ -1,0 +1,134 @@
+{
+  "atlas": "T_VX_Splash_A.png",
+  "size": [
+    512,
+    512
+  ],
+  "frame_size": [
+    128,
+    128
+  ],
+  "grid": [
+    4,
+    4
+  ],
+  "frames": 16,
+  "suggested_fps": 30,
+  "generated_by": "tools/gen_ui_vfx_assets.py",
+  "seed": 20261029,
+  "blend": "ADDITIVE assumed: RGB adds light scaled by alpha; every pixel with alpha > 0 is bright foam/white by construction, so it can only brighten the scene. Also usable with straight alpha.",
+  "frame_map": [
+    {
+      "frame": 0,
+      "x": 0,
+      "y": 0,
+      "w": 128,
+      "h": 128
+    },
+    {
+      "frame": 1,
+      "x": 128,
+      "y": 0,
+      "w": 128,
+      "h": 128
+    },
+    {
+      "frame": 2,
+      "x": 256,
+      "y": 0,
+      "w": 128,
+      "h": 128
+    },
+    {
+      "frame": 3,
+      "x": 384,
+      "y": 0,
+      "w": 128,
+      "h": 128
+    },
+    {
+      "frame": 4,
+      "x": 0,
+      "y": 128,
+      "w": 128,
+      "h": 128
+    },
+    {
+      "frame": 5,
+      "x": 128,
+      "y": 128,
+      "w": 128,
+      "h": 128
+    },
+    {
+      "frame": 6,
+      "x": 256,
+      "y": 128,
+      "w": 128,
+      "h": 128
+    },
+    {
+      "frame": 7,
+      "x": 384,
+      "y": 128,
+      "w": 128,
+      "h": 128
+    },
+    {
+      "frame": 8,
+      "x": 0,
+      "y": 256,
+      "w": 128,
+      "h": 128
+    },
+    {
+      "frame": 9,
+      "x": 128,
+      "y": 256,
+      "w": 128,
+      "h": 128
+    },
+    {
+      "frame": 10,
+      "x": 256,
+      "y": 256,
+      "w": 128,
+      "h": 128
+    },
+    {
+      "frame": 11,
+      "x": 384,
+      "y": 256,
+      "w": 128,
+      "h": 128
+    },
+    {
+      "frame": 12,
+      "x": 0,
+      "y": 384,
+      "w": 128,
+      "h": 128
+    },
+    {
+      "frame": 13,
+      "x": 128,
+      "y": 384,
+      "w": 128,
+      "h": 128
+    },
+    {
+      "frame": 14,
+      "x": 256,
+      "y": 384,
+      "w": 128,
+      "h": 128
+    },
+    {
+      "frame": 15,
+      "x": 384,
+      "y": 384,
+      "w": 128,
+      "h": 128
+    }
+  ]
+}

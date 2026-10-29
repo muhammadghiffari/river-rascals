@@ -1,0 +1,11 @@
+{
+  "atlas": "T_VX_Wake_A.png",
+  "size": [
+    256,
+    256
+  ],
+  "tileable": "both axes (V arms at 45 deg from apex; integer-cycle modulation)",
+  "generated_by": "tools/gen_ui_vfx_assets.py",
+  "seed": 20261029,
+  "blend": "ALPHA blend assumed (foam over water); additive-safe too because RGB is bright wherever alpha > 0."
+}
