@@ -11,7 +11,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 
 
-@unittest.skipUnless(importlib.util.find_spec("numpy"), "offline synthesis requires numpy")
+@unittest.skipUnless(
+    importlib.util.find_spec("numpy") and importlib.util.find_spec("soundfile"),
+    "offline synthesis requires numpy and soundfile",
+)
 class SynthesisTests(unittest.TestCase):
     def test_deterministic_distinct_faded_mono_takes(self):
         import numpy as np

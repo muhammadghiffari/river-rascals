@@ -140,7 +140,7 @@ The scene was built and verified locally from exactly this commit's sources
 
 | check | result |
 |---|---|
-| `pytest` | **186 passed**, 43 subtests, 0 failures, 0 skipped |
+| `pytest` | **186 passed**, 43 subtests, 0 failures; skip count not recorded |
 | `ruff check src tests tools scripts game` | **All checks passed** |
 | `compileall src tools game scripts` | OK |
 | audio generation + `--validate-only` | **24/24 PASS**, 0 missing |
