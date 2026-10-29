@@ -264,7 +264,7 @@ class EntryTests(unittest.TestCase):
 
     def test_bank_contact_pushes_back_towards_the_water(self):
         self.h.hold("ENTERKEY")
-        self.h.frames()
+        self.h.frames(2)
         self.h.body.worldPosition = (self.h.session.game.cfg.bank_x, 20.0, 0.31)
         self.h.body.forces.clear()
         self.h.frames()
@@ -273,7 +273,7 @@ class EntryTests(unittest.TestCase):
     def test_speed_and_spin_are_clamped(self):
         cfg = self.h.session.game.cfg
         self.h.hold("ENTERKEY")
-        self.h.frames()
+        self.h.frames(2)
         self.h.body.worldLinearVelocity = (0.0, 99.0, 0.0)
         self.h.body.localAngularVelocity = (0.0, 0.0, 12.0)
         self.h.frames()

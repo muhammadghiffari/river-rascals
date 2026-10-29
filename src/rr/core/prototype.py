@@ -58,6 +58,23 @@ def forces(cfg, z, velocity, yaw, spin, thrust, paddle_torque, time):
     return tuple(value * scale for value in world), torque
 
 
+class TeleportGuard:
+    """Suppress forces for two physics frames following a teleport."""
+
+    def __init__(self) -> None:
+        self.remaining = 0
+
+    def reset(self) -> None:
+        self.remaining = 2
+
+    def step(self) -> bool:
+        """Return whether forces are enabled and consume one frame."""
+        if self.remaining:
+            self.remaining -= 1
+            return False
+        return True
+
+
 class Prototype:
     """Menu/playing/pause/results lifecycle, progress and forgiving damage."""
 

@@ -29,6 +29,7 @@ from rr.core.oar import Oar, OarConfig, OarPhase
 from rr.core.prototype import (
     Prototype,
     PrototypeConfig,
+    TeleportGuard,
     controls,
     forces,
     hud_text,
@@ -102,6 +103,7 @@ class Session:
         self.hover_latched = False
         self.mouse_latched = False
         self._text_setters = {}
+        self.teleport_guard = TeleportGuard()
         self.smoke = ({"frames": 0, "seconds": 0.0, "max_y": self.cfg.start_y,
                        "max_speed": 0.0, "min_z": 1e9, "max_z": -1e9} if SMOKE else None)
         self.body.collisionCallbacks.append(self.on_collision)
@@ -184,6 +186,7 @@ class Session:
         body.worldOrientation = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
         body.worldLinearVelocity = (0.0, 0.0, 0.0)
         body.worldAngularVelocity = (0.0, 0.0, 0.0)
+        self.teleport_guard.reset()
 
     # ---------------- driving ----------------
 
@@ -375,7 +378,7 @@ class Session:
         else:
             down, edges = self.poll_keys()
             self.handle_commands(edges, self.poll_pointer())
-        if self.game.mode == "playing":
+        if self.game.mode == "playing" and self.teleport_guard.step():
             self.drive(dt, down & PADDLE_KEYS)
         self.game.advance(dt, self.body.worldPosition.y)
         if self.game.respawn_pending:
