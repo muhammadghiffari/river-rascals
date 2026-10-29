@@ -5,7 +5,7 @@
 |---|---|---|---|---|
 | **P1 — Lead / Tech / Gameplay code** | Repo owner | owner's machine | GitHub setup, CI, architecture, engine pin, physics & gameplay code, integration, merges, releases, cost tracking | architect, builder, gameplay, debugger, release |
 | **P2 — Art / Tech-Art / Animation** | Friend A | **ASUS V16 (Tier A, strong)** | Blender MCP, all 3D assets, rigs, animation, shaders, VFX sprites, perf profiling at High preset, intro cinematic | techart, reviewer (asset), docs |
-| **P3 — Design / Level / UI / Audio / QA** | Friend B | **mid-spec laptop (Tier B baseline)** | GDD upkeep, level design & placement, HUD/menu implementation (with agents), audio sourcing/integration, playtests, Tier B perf baselines, build verification | qa, gameplay (UI), architect (level docs), docs |
+| **P3 — Design / Level / UI / Audio / QA** | Friend B | **mid-spec laptop (Tier C per `docs/16` post-#65)** | GDD upkeep, level design & placement, HUD/menu implementation (with agents), audio sourcing/integration, playtests, Tier B perf baselines, build verification | qa, gameplay (UI), architect (level docs), docs |
 Everyone: reviews at least 2 PRs/week (human sanity check on top of `@reviewer`), keeps issues updated, runs `check_env.py` weekly.
 
 ## 2. Hardware roles

@@ -118,14 +118,15 @@ data, not opinion. `SKIP` means "feature absent in this build" — it is a findi
 Fill one row per (version, machine).
 
 **Matrix status: INCOMPLETE.** No probe rows have been recorded. The required rows are **0.50 and
-0.44.x on Tier A (P2 ASUS) and Tier B (P3 Linux laptop)**; this report also asks for P1's machine row,
-but that extra row does not substitute for the Tier A/B rows. Issue #9 stays open until the required
+0.44.x on Tier A (P2 ASUS) and Tier C (P3 Linux laptop)**; this report also asks for P1's machine row,
+but that extra row does not substitute for the Tier A/C rows. Issue #9 stays open until the required
 rows exist and the pin block in `docs/03` §2 is filled.
 
 ### 3.0 Machine labels
 
-`docs/16_HARDWARE_PROFILES.md` records P2 = ASUS V16 = Tier A and **P3 = mid-spec laptop = Tier B**
-(Tier C optional, unassigned); P1's machine tier is not yet recorded. This report uses the machine
+`docs/16_HARDWARE_PROFILES.md` records P2 = ASUS V16 = Tier A and **P3 = mid-spec laptop =
+Tier C** (post-#65; the copy of `docs/16` on this branch still says Tier B); P1's machine tier is not
+recorded on this branch. This report uses the machine
 labels P1/P2/P3 and does not assign a different tier to P3. Fill the hardware rows in `docs/16` when
 the specs are known (a human decision; not changed by this PR).
 
@@ -218,7 +219,10 @@ decisive checks below**, unless 0.50 fails on a feature that a second build coul
 If 0.50 passes checks 1–4 on P2 and on both P1/P3, P1 may still **time-box or skip** the 0.44 runs
 as a risk-reduction choice. A skipped or partial 0.44 run does **not** satisfy the `docs/10` P1.1
 acceptance ("matrix complete for both candidate versions on Tier A and Tier B"): the matrix stays
-**INCOMPLETE**, and issue #9 must stay open. Record the exception and the exact rows still to run;
+**INCOMPLETE**, and issue #9 must stay open. Note: that quoted wording comes from `docs/10` §P1.1 and
+is stale — it predates #65, and post-#65 `docs/16` puts P3 on Tier C and Tier B on P1's Aspire, so
+"Tier A and Tier B" no longer names the same two machines as §3.1; which machines the acceptance
+actually requires is a P1 decision. Record the exception and the exact rows still to run;
 only a complete 0.50 + 0.44 matrix on the required tiers closes the acceptance. The 0.50 Linux `-b`
 crash stays a known issue (§6.1) because our workflow does not need `-b` component creation:
 generation is windowed, CI never runs Blender.
@@ -257,7 +261,7 @@ Collection** and a **KX_Camera**. Two practical consequences:
 - `hud.blend` cannot be "added as an overlay scene"; the HUD must become a linked collection with
   its own camera (separate `.blend` can still be linked, but community reports describe pain with
   linked overlay collections and duplicated instances — test before V-09 commits to it).
-- Overlay = one extra full render pass. On Tier B this is a real cost for the HUD, so HUD draw
+- Overlay = one extra full render pass. On Tier C (P3's laptop) this is a real cost for the HUD, so HUD draw
   calls stay a budget item for docs/13 (no budget changed by this spike).
 
 ### 6.4 2D filters are unavailable in "viewport render" mode
@@ -428,7 +432,7 @@ and the 0.44.x rows exist.
 ## 7. Decision rules and provisional recommendation
 
 **Pass bar for the pin:** `component`, `tic_rates`, `physics`, `aud_play` PASS on the same version on
-**all three machines** (P2, P1, P3; docs/16 records P2 = Tier A and P3 = Tier B); `aud_3d` and
+**all three machines** (P2, P1, P3; `docs/16` post-#65 records P2 = Tier A and P3 = Tier C); `aud_3d` and
 `play_action` PASS on at least one machine; `overlay` and `filter2d` MAY be SKIP (redesignable);
 fps ≥ 30 on the trivial scene everywhere it runs.
 
@@ -439,7 +443,7 @@ workflow. Keep **0.44.x** as the fallback for S-02/S-03 if raft physics destabil
 5 base (risk R-01 already says "switch to 0.44 if 0.50 blocks by M1 end").
 
 **Escalate to the human owner (P1) instead of switching unilaterally if:** any of `component`,
-`tic_rates`, `physics`, `aud_play` fails on 0.50 on Tier A or Tier B (P2 or P3), or the 0.50 Linux
+`tic_rates`, `physics`, `aud_play` fails on 0.50 on Tier A or Tier C (P2 or P3), or the 0.50 Linux
 build cannot run the probe at all.
 
 **Pin block (docs/03 §2) — fill only after approval:**
