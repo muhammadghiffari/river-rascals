@@ -199,6 +199,19 @@ class EntryTests(unittest.TestCase):
     def setUp(self):
         self.h = Harness(self.addCleanup)
 
+    def test_splash_events_follow_policy_cooldown(self):
+        session = self.h.session
+        from rr.core.prototype_audio import EVENTS
+
+        with patch.object(session.audio, "event") as event:
+            session.game.elapsed = 0
+            session.splash_audio((0, 10, 0))
+            session.game.elapsed = EVENTS["splash"].cooldown / 2
+            session.splash_audio((0, 10, 0))
+            session.game.elapsed = EVENTS["splash"].cooldown
+            session.splash_audio((0, 10, 0))
+        self.assertEqual(event.call_count, 2)
+
     def test_tick_failure_is_logged_once_and_disables_session(self):
         module = self.h.module
         module._SESSION = self.h.session

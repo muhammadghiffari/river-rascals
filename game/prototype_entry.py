@@ -36,7 +36,7 @@ from rr.core.prototype import (
     hud_text,
     prompt_text,
 )
-from rr.core.prototype_audio import MODE_LOOPS
+from rr.core.prototype_audio import EVENTS, MODE_LOOPS
 from rr.glue.prototype_audio import PrototypeAudio
 
 ROOT = os.path.abspath(os.path.join(_HERE, os.pardir))
@@ -119,6 +119,7 @@ class Session:
         self.mouse_latched = False
         self._text_setters = {}
         self.teleport_guard = TeleportGuard()
+        self.last_splash = float("-inf")
         self.smoke = ({"frames": 0, "seconds": 0.0, "max_y": self.cfg.start_y,
                        "max_speed": 0.0, "min_z": 1e9, "max_z": -1e9} if SMOKE else None)
         self.body.collisionCallbacks.append(self.on_collision)
@@ -202,6 +203,7 @@ class Session:
         body.worldLinearVelocity = (0.0, 0.0, 0.0)
         body.worldAngularVelocity = (0.0, 0.0, 0.0)
         self.teleport_guard.reset()
+        self.last_splash = float("-inf")
 
     # ---------------- driving ----------------
 
@@ -270,7 +272,9 @@ class Session:
 
     def splash_audio(self, velocity):
         relative = abs(velocity[1] - self.cfg.flow_speed)
-        if relative > SPLASH_SPEED or abs(velocity[0]) > SPLASH_SPEED:
+        if ((relative > SPLASH_SPEED or abs(velocity[0]) > SPLASH_SPEED)
+                and self.game.elapsed - self.last_splash >= EVENTS["splash"].cooldown):
+            self.last_splash = self.game.elapsed
             self.audio.event("splash")
 
     def on_collision(self, other, point=None, normal=None):
