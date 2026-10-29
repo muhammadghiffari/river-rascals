@@ -436,6 +436,10 @@ and the 0.44.x rows exist.
 `play_action` PASS on at least one machine; `overlay` and `filter2d` MAY be SKIP (redesignable);
 fps ≥ 30 on the trivial scene everywhere it runs.
 
+`fps` is graded PASS when the **median** of the used samples is ≥ 30 after dropping every sample
+before 1.0 s plus non-finite and non-positive values (`src/rr/core/spike.py::compute_fps_stats`) —
+criterion changed after the P2 run; earlier artifacts used avg.
+
 **Provisional recommendation (not a decision):** pin **0.50** if the bar is met — it is the newest
 stable line, has the fast-AddObject and GPU-skinning work the asset/perf plans want (docs/03 §8),
 and the only known defect so far (background component creation) does not affect the shipping
