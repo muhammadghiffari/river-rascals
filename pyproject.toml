@@ -4,6 +4,9 @@ version = "0.1.0"
 requires-python = ">=3.10"
 description = "River Rascals - cozy-chaotic co-op rafting game on UPBGE (working title)"
 
+[project.optional-dependencies]
+dev = ["pytest", "numpy", "soundfile", "ruff"]
+
 [tool.ruff]
 line-length = 110
 target-version = "py310"
@@ -20,6 +23,7 @@ extend-immutable-calls = ["rr.core.buoyancy.BuoyancyConfig", "rr.core.oar.OarCon
 [tool.ruff.lint.per-file-ignores]
 "src/rr/glue/*" = ["F401"]          # bge/mathutils only importable inside UPBGE
 "game/rr_components.py" = ["F401", "E402"]
+"game/prototype_entry.py" = ["E402"]   # sys.path must be extended before rr.* imports
 "tools/blender/*" = ["E402"]
 
 [tool.pytest.ini_options]

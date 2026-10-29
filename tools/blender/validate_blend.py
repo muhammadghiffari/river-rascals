@@ -55,7 +55,8 @@ for obj in bpy.data.objects:
             fail("%s has unapplied scale %s" % (obj.name, tuple(round(v, 3) for v in sc)))
 
 for img in bpy.data.images:
-    if img.size[0] == 0:
+    if img.size[0] == 0 or img.size[1] == 0:
+        fail("image %s failed to load" % img.name)
         continue
     w, h = img.size
     if max(w, h) > 2048:

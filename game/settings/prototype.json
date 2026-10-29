@@ -1,0 +1,23 @@
+{
+  "mass": 300.0,
+  "raft_width": 2.428734742079433,
+  "raft_length": 4.8,
+  "raft_height": 0.8733232985180094,
+  "flow_speed": 2.0,
+  "bank_x": 11.0,
+  "finish_y": 180.0,
+  "start_y": 4.0,
+  "stiffness": 24000.0,
+  "damping": 2700.0,
+  "forward_drag": 90.0,
+  "lateral_drag": 400.0,
+  "yaw_drag": 500.0,
+  "max_force": 9000.0,
+  "max_torque": 2000.0,
+  "max_speed": 12.0,
+  "max_spin": 3.0,
+  "wave_amplitude": 0.025,
+  "wave_frequency": 1.5,
+  "impact_cooldown": 0.8,
+  "max_hull": 5
+}
