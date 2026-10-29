@@ -118,6 +118,9 @@ else:
 
 # --- scene/game settings ---------------------------------------------------
 gs = scene.game_settings
+report["render_engine"] = scene.render.engine
+check(scene.render.engine == "BLENDER_EEVEE",
+      f"render engine is {scene.render.engine}, expected BLENDER_EEVEE")
 report["game_settings"] = {"fps": gs.fps, "gravity": gs.physics_gravity,
                            "resolution": [gs.resolution_x, gs.resolution_y],
                            "physics_engine": gs.physics_engine, "exit_key": gs.exit_key}
