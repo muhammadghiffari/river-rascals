@@ -4,8 +4,10 @@ A fake `bge` lets the real adapter run headlessly, so force application,
 collision damage, audio cues and mode changes are exercised rather than assumed.
 This is NOT a claim that UPBGE runtime behaviour was verified.
 """
+import contextlib
 import importlib
 import importlib.util
+import io
 import math
 import sys
 import unittest
@@ -196,6 +198,41 @@ class Harness:
 class EntryTests(unittest.TestCase):
     def setUp(self):
         self.h = Harness(self.addCleanup)
+
+    def test_tick_failure_is_logged_once_and_disables_session(self):
+        module = self.h.module
+        module._SESSION = self.h.session
+        controller = SimpleNamespace(owner=SimpleNamespace(scene=self.h.scene))
+        output = io.StringIO()
+        with patch.object(self.h.session, "update", side_effect=RuntimeError("frame failed")) as update:
+            with contextlib.redirect_stderr(output):
+                module.tick(controller)
+                module.tick(controller)
+        self.assertEqual(update.call_count, 1)
+        self.assertEqual(output.getvalue().count("Traceback (most recent call last)"), 1)
+
+    def test_initialization_failure_is_logged_once(self):
+        module = self.h.module
+        controller = SimpleNamespace(owner=SimpleNamespace(scene=SimpleNamespace(objects={})))
+        output = io.StringIO()
+        with contextlib.redirect_stderr(output):
+            module.tick(controller)
+            module.tick(controller)
+        self.assertEqual(output.getvalue().count("Traceback (most recent call last)"), 1)
+
+    def test_collision_failure_is_logged_once_and_disables_tick(self):
+        module = self.h.module
+        module._SESSION = self.h.session
+        self.h.session.game.mode = "playing"
+        controller = SimpleNamespace(owner=SimpleNamespace(scene=self.h.scene))
+        output = io.StringIO()
+        with patch.object(self.h.session.game, "impact", side_effect=RuntimeError("bad collision")) as impact:
+            with contextlib.redirect_stderr(output):
+                self.h.session.on_collision(None)
+                self.h.session.on_collision(None)
+                module.tick(controller)
+        self.assertEqual(impact.call_count, 1)
+        self.assertEqual(output.getvalue().count("Traceback (most recent call last)"), 1)
 
     def test_starts_in_menu_with_menu_music_and_prompt(self):
         self.assertEqual(self.h.session.game.mode, "menu")

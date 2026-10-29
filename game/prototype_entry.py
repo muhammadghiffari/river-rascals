@@ -16,6 +16,7 @@ import json
 import math
 import os
 import sys
+import traceback
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _SRC = os.path.abspath(os.path.join(_HERE, os.pardir, "src"))
@@ -72,6 +73,7 @@ SMOKE_SECONDS = float(os.environ.get("RR_SMOKE_SECONDS") or 12.0)
 SMOKE_OUT = os.environ.get("RR_SMOKE_OUT") or ""
 
 _SESSION = None
+_DISABLED = object()
 
 
 def load_config(path=SETTINGS):
@@ -89,6 +91,19 @@ class Session:
     """One prototype run: owns engine objects, gameplay state and audio."""
 
     def __init__(self, scene):
+        self.disabled = False
+        try:
+            self._initialize(scene)
+        except Exception:  # noqa: BLE001 - engine callback must not flood logs
+            self.disable()
+
+    def disable(self):
+        """Disable this session and report the current exception exactly once."""
+        if not self.disabled:
+            self.disabled = True
+            traceback.print_exc()
+
+    def _initialize(self, scene):
         self.scene = scene
         self.cfg = load_config()
         self.game = Prototype(self.cfg)
@@ -260,6 +275,14 @@ class Session:
 
     def on_collision(self, other, point=None, normal=None):
         """Bullet contact callback. Only registered impacts make a sound."""
+        if self.disabled:
+            return
+        try:
+            self._collision()
+        except Exception:  # noqa: BLE001 - engine callback must not flood logs
+            self.disable()
+
+    def _collision(self):
         if self.game.mode != "playing":
             return
         hits = self.game.hits
@@ -394,6 +417,16 @@ class Session:
 def tick(controller):
     """Always-sensor entry point. Builds the session on the first frame."""
     global _SESSION
-    if _SESSION is None:
-        _SESSION = Session(controller.owner.scene)
-    _SESSION.update()
+    if _SESSION is _DISABLED:
+        return
+    try:
+        if _SESSION is None:
+            _SESSION = Session(controller.owner.scene)
+        if not _SESSION.disabled:
+            _SESSION.update()
+    except Exception:  # noqa: BLE001 - engine callback must not flood logs
+        if _SESSION is None:
+            _SESSION = _DISABLED
+            traceback.print_exc()
+        else:
+            _SESSION.disable()
