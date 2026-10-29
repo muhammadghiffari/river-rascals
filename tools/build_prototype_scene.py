@@ -10,6 +10,7 @@ Three passes, because this UPBGE build cannot do all of it in one:
 Pass 2 must be windowed: `bpy.ops.logic.sensor_add` access-violates under `-b`.
 Pass 2 also exits via `os._exit`, so its exit code is not evidence. Success is
 decided by the stdout markers and by pass 3 re-opening the saved file.
+The windowed pass has a 60-second timeout; background passes have 300 seconds.
 
 Usage (set UPBGE_PATH to the folder holding blender/blenderplayer):
   python tools/build_prototype_scene.py
@@ -30,22 +31,21 @@ BLEND = ROOT / "game/main.blend"
 BUILD = ROOT / "tools/blender/build_prototype.py"
 WIRE = ROOT / "tools/blender/wire_prototype_logic.py"
 VERIFY = ROOT / "tools/blender/verify_prototype_scene.py"
-NOISE = ("LogicNode", "Bricky", "addon_utils", "bge_netlogic", "DeprecationWarning",
-         "use_nodes", "Registering", "Unregistering", "Removing Game", "_old_selected",
-         "active_object", "mod.register", "Traceback (most recent call last)",
-         "AttributeError", "During handling")
-
-
-def run(label: str, argv: list[str], marker: str) -> tuple[bool, str]:
+def run(label: str, argv: list[str], marker: str, timeout: int = 300) -> tuple[bool, str]:
     print(f"--- {label}: {' '.join(argv)}")
-    done = subprocess.run(argv, capture_output=True, text=True)
-    interesting = [line for line in (done.stdout + done.stderr).splitlines()
-                   if line.strip() and not any(noise in line for noise in NOISE)]
-    for line in interesting[-12:]:
-        print("   ", line)
-    found = any(marker in line for line in interesting)
+    try:
+        done = subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired as exc:
+        output = b"\n".join(part for part in (exc.stdout, exc.stderr) if isinstance(part, bytes))
+        text = output.decode(errors="replace")
+        print(text)
+        print(f"FAILED: {label} timeout after {timeout}s")
+        return False, text
+    output = done.stdout + done.stderr
+    print(output, end="" if output.endswith("\n") else "\n")
+    found = marker in output
     print(f"    exit={done.returncode} marker({marker})={'yes' if found else 'NO'}")
-    return found, "\n".join(interesting)
+    return found, output
 
 
 def main() -> int:
@@ -66,7 +66,7 @@ def main() -> int:
         wired, _ = run("2/3 logic bricks (windowed)",
                        [blender, host_path(BLEND, blender), "--factory-startup",
                         "--python", host_path(WIRE, blender)],
-                       "WIRE_OK")
+                       "WIRE_OK", timeout=60)
         if not wired:
             print("FAILED: logic wiring pass did not report WIRE_OK")
             return 1
