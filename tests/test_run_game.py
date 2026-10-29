@@ -82,6 +82,12 @@ class SmokeTimeoutTests(unittest.TestCase):
         bin_dir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, bin_dir, ignore_errors=True)
         (Path(bin_dir) / "blenderplayer").touch()  # find_exe only checks existence
+        # main() unlinks the relative smoke_result.json before running the engine,
+        # so give it a scratch CWD instead of the suite's directory.
+        work_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, work_dir, ignore_errors=True)
+        self.addCleanup(os.chdir, os.getcwd())
+        os.chdir(work_dir)
         argv = ["run_game.py", "dummy.blend", "--smoke"]
         expired = subprocess.TimeoutExpired(cmd="blenderplayer", timeout=1.0)
         with mock.patch.object(run_game.sys, "argv", argv), \
