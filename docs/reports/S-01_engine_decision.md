@@ -362,7 +362,7 @@ unit tests; they do not establish UPBGE compatibility.
 
 - `ruff check src tests tools scripts game` → `All checks passed!`
 - `python -m compileall -q src tools game` → exit 0.
-- `python -m unittest discover -s tests` → 47 tests, `OK (skipped=1)`.
+- `python -m unittest discover -s tests` → 61 tests, `OK` (no skips; re-run 2026-10-29 at 2b71d3a — supersedes the earlier `47 tests, OK (skipped=1)`).
 
 **Manual windowed test — VERIFY until the owner reports output:** from the repo root, launch
 a **new** UPBGE process, never run this generator in a session with unsaved work:
