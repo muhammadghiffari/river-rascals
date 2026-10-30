@@ -344,6 +344,11 @@ def run_checks(root: Path) -> tuple[list[str], list[str]]:
         frame_errors = []
         if sp_map["grid"] != [4, 4] or fs != 128 or sp_w != 512:
             frame_errors.append(f"unexpected layout {sp_map['grid']} frame {fs} atlas {sp_w}")
+        # the blank padding frame must be explicit in the JSON, not a surprise
+        if sp_map.get("frames_used") != 15 or sp_map.get("last_frame_empty") is not True:
+            frame_errors.append(
+                "splash JSON must declare frames_used 15 and last_frame_empty true "
+                "(the 4x4 sheet's last slot is blank padding)")
         # frame 0 must burst (bright visible pixels), frame 15 must have faded out
         f0 = _cell_rgba(sp_img, 0, 0, fs, fs)
         if alpha_usage_stats(px[3] for px in f0)["visible"] < 64:

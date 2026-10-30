@@ -81,6 +81,7 @@ SPLASH_FRAME_SIZE = 128
 SPLASH_ATLAS_SIZE = SPLASH_GRID * SPLASH_FRAME_SIZE  # 512
 SPLASH_SS = 2  # field is analytic and smooth; 2x is enough
 SPLASH_FRAMES = SPLASH_GRID * SPLASH_GRID  # 16
+SPLASH_FRAMES_USED = SPLASH_FRAMES - 1  # the 4x4 sheet needs 16 slots; animation uses 0..14
 SPLASH_DURATION_S = 0.55
 SPLASH_DROPLETS = 26
 SPLASH_GRAVITY = 140.0  # px/s^2 in 128-unit frame space, +Y is down
@@ -549,6 +550,8 @@ def write_atlas_maps(entries: list[dict], ui_dir: Path, vfx_dir: Path) -> None:
         "frame_size": [SPLASH_FRAME_SIZE, SPLASH_FRAME_SIZE],
         "grid": [SPLASH_GRID, SPLASH_GRID],
         "frames": SPLASH_FRAMES,
+        "frames_used": SPLASH_FRAMES_USED,
+        "last_frame_empty": True,
         "suggested_fps": 30,
         "generated_by": "tools/gen_ui_vfx_assets.py",
         "seed": SEED,

@@ -13,6 +13,8 @@
     4
   ],
   "frames": 16,
+  "frames_used": 15,
+  "last_frame_empty": true,
   "suggested_fps": 30,
   "generated_by": "tools/gen_ui_vfx_assets.py",
   "seed": 20261029,

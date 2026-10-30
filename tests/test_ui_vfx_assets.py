@@ -417,6 +417,12 @@ class EndToEndTests(unittest.TestCase):
             recorded = json.loads((repo_root / json_rel).read_text(encoding="utf-8"))
             self.assertEqual(recorded["pixel_hash"], committed_hash, json_rel)
 
+    def test_splash_json_declares_blank_padding_frame(self):
+        sp_map = json.loads(
+            (self.root / "assets/vfx/T_VX_Splash_A.json").read_text(encoding="utf-8"))
+        self.assertEqual(sp_map["frames_used"], 15)
+        self.assertTrue(sp_map["last_frame_empty"])
+
     def test_vfx_transparent_pixels_carry_no_rgb(self):
         """Additive gate: zero RGB energy behind alpha == 0 (raw-ADD safe)."""
         for png_rel in ("assets/vfx/T_VX_Splash_A.png", "assets/vfx/T_VX_Wake_A.png"):
