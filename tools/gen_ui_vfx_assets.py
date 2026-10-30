@@ -25,9 +25,13 @@ Docs/04 rules honoured here:
 
 Blend assumptions (documented per docs/04 "no baked light unless documented"):
   - VX_Splash: intended for ADDITIVE blending. RGB is bright foam/white wherever
-    alpha > 0 (no dark fringes), so adding RGB scaled by alpha only ever brightens.
-  - VX_Wake: intended for ALPHA blending (soft foam over water); it is also
-    additive-safe for the same brightness reason.
+    alpha > 0 (no dark fringes) and zeroed wherever alpha == 0, so both
+    alpha-multiplied additive (SRC_ALPHA, ONE) and raw ADD (ONE, ONE) can only
+    brighten. VERIFY in UPBGE which additive blend mode the material uses.
+  - VX_Wake: intended for ALPHA blending (soft foam over water); additive-safe
+    for the same reason.
+  - Transparent pixels carry zero RGB energy (checker-enforced): under raw ADD
+    any RGB hidden behind alpha == 0 would haze the whole quad.
 
 Pure helpers (numpy only, no Pillow) are importable by tests: icon_atlas_layout,
 splash_droplets, splash_intensity_field, wake_intensity_field, periodic_noise,
@@ -476,6 +480,7 @@ def render_splash_sheet() -> "Image.Image":
         small = downsample_mean(field, SPLASH_SS)
         rgb = tint_by_intensity(small, SPLASH_TINT_LOW, SPLASH_TINT_HIGH)
         alpha = (small * 255 * 0.95).round().astype(np.uint8)
+        rgb[alpha == 0] = 0  # raw-ADD safe: no RGB energy behind transparent pixels
         frame = Image.fromarray(np.dstack([rgb, alpha]), "RGBA")
         sheet.paste(frame, ((f % SPLASH_GRID) * SPLASH_FRAME_SIZE,
                             (f // SPLASH_GRID) * SPLASH_FRAME_SIZE))
@@ -487,6 +492,7 @@ def render_wake_strip() -> "Image.Image":
     field = wake_intensity_field(WAKE_SIZE)
     rgb = tint_by_intensity(field, WAKE_TINT_LOW, WAKE_TINT_HIGH)
     alpha = (field * 255 * 0.92).round().astype(np.uint8)
+    rgb[alpha == 0] = 0  # raw-ADD safe: no RGB energy behind transparent pixels
     return Image.fromarray(np.dstack([rgb, alpha]), "RGBA")
 
 
@@ -546,9 +552,12 @@ def write_atlas_maps(entries: list[dict], ui_dir: Path, vfx_dir: Path) -> None:
         "suggested_fps": 30,
         "generated_by": "tools/gen_ui_vfx_assets.py",
         "seed": SEED,
-        "blend": ("ADDITIVE assumed: RGB adds light scaled by alpha; every pixel "
-                  "with alpha > 0 is bright foam/white by construction, so it can "
-                  "only brighten the scene. Also usable with straight alpha."),
+        "blend": ("ADDITIVE assumed: RGB is bright foam/white wherever alpha > 0, "
+                  "so alpha-multiplied additive (SRC_ALPHA, ONE) can only brighten. "
+                  "RGB is zeroed wherever alpha == 0, so even raw ADD (ONE, ONE) "
+                  "adds nothing from transparent pixels. Straight alpha also works. "
+                  "VERIFY in UPBGE: which additive blend the material uses "
+                  "(alpha-multiplied vs raw ADD) and that the render matches."),
         **_atlas_meta(vfx_dir / "T_VX_Splash_A.png"),
         "frame_map": [
             {"frame": f, "x": (f % SPLASH_GRID) * SPLASH_FRAME_SIZE,
@@ -566,8 +575,11 @@ def write_atlas_maps(entries: list[dict], ui_dir: Path, vfx_dir: Path) -> None:
         "tileable": "both axes (V arms at 45 deg from apex; integer-cycle modulation)",
         "generated_by": "tools/gen_ui_vfx_assets.py",
         "seed": SEED,
-        "blend": ("ALPHA blend assumed (foam over water); additive-safe too because "
-                  "RGB is bright wherever alpha > 0."),
+        "blend": ("ALPHA blend assumed (soft foam over water); additive-safe too: "
+                  "RGB is bright wherever alpha > 0 and zeroed wherever alpha == 0, "
+                  "so both alpha-multiplied additive (SRC_ALPHA, ONE) and raw ADD "
+                  "(ONE, ONE) only brighten. VERIFY in UPBGE which blend mode the "
+                  "material uses."),
         **_atlas_meta(vfx_dir / "T_VX_Wake_A.png"),
     }
     (vfx_dir / "T_VX_Wake_A.json").write_text(json.dumps(wake_json, indent=2) + "\n",

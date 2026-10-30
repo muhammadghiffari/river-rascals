@@ -16,10 +16,10 @@
   "suggested_fps": 30,
   "generated_by": "tools/gen_ui_vfx_assets.py",
   "seed": 20261029,
-  "blend": "ADDITIVE assumed: RGB adds light scaled by alpha; every pixel with alpha > 0 is bright foam/white by construction, so it can only brighten the scene. Also usable with straight alpha.",
+  "blend": "ADDITIVE assumed: RGB is bright foam/white wherever alpha > 0, so alpha-multiplied additive (SRC_ALPHA, ONE) can only brighten. RGB is zeroed wherever alpha == 0, so even raw ADD (ONE, ONE) adds nothing from transparent pixels. Straight alpha also works. VERIFY in UPBGE: which additive blend the material uses (alpha-multiplied vs raw ADD) and that the render matches.",
   "pillow_version": "13.0.0",
   "numpy_version": "2.5.4",
-  "pixel_hash": "51e43249a33ab44cd468aad143a918383f7cf2e38e4f4d39d7e6cb0a419450ef",
+  "pixel_hash": "90f1298f4ec2e5dc8ad22c4bb62adc789d12d5e7daed8e33f4e568c418cc8d55",
   "frame_map": [
     {
       "frame": 0,

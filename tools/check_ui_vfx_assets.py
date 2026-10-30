@@ -2,9 +2,9 @@
 """Pure-Python checker for the generated UI/VFX atlases (docs/04 sections 3-5).
 
 Validation logic (sizes, power-of-two, alpha presence, atlas-map bounds, seam
-jump, additive brightness, JSON pixel-hash vs decoded PNG) is written against
-plain Python data structures so it is unit-testable without Pillow. Pillow is
-imported lazily and is only used to decode pixels from disk.
+jump, transparent-pixel RGB energy, JSON pixel-hash vs decoded PNG) is written
+against plain Python data structures so it is unit-testable without Pillow.
+Pillow is imported lazily and is only used to decode pixels from disk.
 
 Usage: python tools/check_ui_vfx_assets.py [--root .]
 Exit code 1 if any check fails.
@@ -28,7 +28,6 @@ except ImportError:  # pragma: no cover
 MAX_DIM = 2048  # docs/04 s4: power-of-two, <= 2048
 VFX_MAX_DIM = 512  # docs/04 s4: "VFX sprite ... atlas <= 512"
 VISIBLE_ALPHA = 32  # a pixel is "visible" from here on
-ADDITIVE_MIN_LUMA = 150  # no dark pixels may carry alpha (additive would darken)
 SEAM_RATIO_LIMIT = 1.5  # seam jump may exceed the worst interior step by <= 50%
 TEXTURE_NAME_RE = re.compile(r"^T_[A-Za-z0-9_]+_(BC|E|A)\.png$")
 
@@ -149,8 +148,9 @@ def tileable_errors(metrics: dict[str, float], limit: float = SEAM_RATIO_LIMIT) 
 def min_visible_luminance(pixels) -> tuple[int, int]:
     """(min luminance, count) over pixels whose alpha >= VISIBLE_ALPHA. Pure.
 
-    `pixels` yields (r, g, b, a) tuples. Used for the additive-friendly rule:
-    any pixel that contributes light must be bright enough not to darken.
+    `pixels` yields (r, g, b, a) tuples. Informational only: bright visible
+    pixels are nice to have for additive sprites, but the gate that catches
+    real additive hazards is transparent_rgb_energy below.
     """
     min_lum = 255
     count = 0
@@ -162,14 +162,26 @@ def min_visible_luminance(pixels) -> tuple[int, int]:
     return min_lum, count
 
 
-def additive_errors(min_lum: int, count: int,
-                    threshold: int = ADDITIVE_MIN_LUMA) -> list[str]:
-    if count == 0:
-        return ["no visible pixels at all"]
-    if min_lum < threshold:
-        return [f"darkest visible pixel has max-channel {min_lum} < {threshold} "
-                "(would darken under additive blending)"]
-    return []
+def transparent_rgb_energy(pixels) -> int:
+    """Sum of RGB channel values over fully transparent (alpha == 0) pixels. Pure.
+
+    Alpha-multiplied additive (SRC_ALPHA, ONE) contributes nothing there, but
+    under raw ADD (ONE, ONE) any RGB energy hidden behind alpha == 0 hazes the
+    whole quad - the real additive hazard a minimum-luminance rule on visible
+    pixels can never catch.
+    """
+    return sum(r + g + b for r, g, b, a in pixels if a == 0)
+
+
+def transparent_bleed_errors(energy: int, documented: bool) -> list[str]:
+    """RGB energy behind alpha == 0 must be zero, or documented in the JSON."""
+    if energy == 0:
+        return []
+    if documented:
+        return []
+    return [f"transparent pixels (alpha == 0) carry RGB energy {energy}: under raw "
+            "ADD blending they would haze the quad. Zero RGB where alpha == 0 or "
+            "document the bleed with a transparent_rgb_bleed note in the atlas JSON"]
 
 
 def pixel_sha256(img) -> str:
@@ -340,8 +352,13 @@ def run_checks(root: Path) -> tuple[list[str], list[str]]:
         if alpha_usage_stats(px[3] for px in f15)["visible"] > 0:
             frame_errors.append("frame 15 has not fully faded")
         report("splash frame layout + fade", frame_errors)
+        sp_energy = transparent_rgb_energy(_rgba_tuples(sp_img.tobytes()))
+        report("splash transparent-pixel RGB energy",
+               transparent_bleed_errors(sp_energy,
+                                        bool(sp_map.get("transparent_rgb_bleed"))),
+               f"{sp_energy} behind alpha == 0")
         lum, cnt = min_visible_luminance(_rgba_tuples(sp_img.tobytes()))
-        report("splash additive-friendly", additive_errors(lum, cnt),
+        report("splash min visible brightness (informational)", [],
                f"min visible max-channel {lum} over {cnt} px")
 
     # --- wake strip ----------------------------------------------------------------
@@ -368,8 +385,13 @@ def run_checks(root: Path) -> tuple[list[str], list[str]]:
         hz = seam_metrics(cols)
         report("wake tileable across width (horizontal seam)", tileable_errors(hz),
                f"seam {hz['seam']:.1f} interior {hz['interior']:.1f} ratio {hz['ratio']:.2f}")
+        wk_energy = transparent_rgb_energy(_rgba_tuples(wk_img.tobytes()))
+        report("wake transparent-pixel RGB energy",
+               transparent_bleed_errors(wk_energy,
+                                        bool(wk_map.get("transparent_rgb_bleed"))),
+               f"{wk_energy} behind alpha == 0")
         lum, cnt = min_visible_luminance(_rgba_tuples(wk_img.tobytes()))
-        report("wake additive-safe", additive_errors(lum, cnt),
+        report("wake min visible brightness (informational)", [],
                f"min visible max-channel {lum} over {cnt} px")
 
     return ok, bad

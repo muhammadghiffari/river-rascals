@@ -115,21 +115,41 @@ class SeamTests(unittest.TestCase):
         self.assertTrue(chk.tileable_errors(m))
 
 
-class AdditiveBrightnessTests(unittest.TestCase):
-    def test_bright_pixels_pass(self):
+class MinBrightnessTests(unittest.TestCase):
+    """min_visible_luminance is informational only, not a gate."""
+
+    def test_bright_pixels_measured(self):
         lum, cnt = chk.min_visible_luminance([(200, 230, 255, 255), (255, 255, 255, 200)])
         self.assertEqual(cnt, 2)
-        self.assertEqual(chk.additive_errors(lum, cnt), [])
+        self.assertEqual(lum, 255)  # max channel per pixel, then min over pixels
 
-    def test_dark_visible_pixel_fails(self):
-        lum, cnt = chk.min_visible_luminance([(10, 10, 10, 255)])
-        errs = chk.additive_errors(lum, cnt)
-        self.assertTrue(any("darken" in e for e in errs), errs)
+    def test_transparent_pixels_ignored(self):
+        lum, cnt = chk.min_visible_luminance([(10, 10, 10, 255), (0, 0, 0, 0)])
+        self.assertEqual(cnt, 1)
+        self.assertEqual(lum, 10)
 
     def test_no_visible_pixels(self):
         lum, cnt = chk.min_visible_luminance([(10, 10, 10, 0)])
-        errs = chk.additive_errors(lum, cnt)
-        self.assertTrue(any("no visible pixels" in e for e in errs), errs)
+        self.assertEqual((lum, cnt), (255, 0))
+
+
+class TransparentBleedTests(unittest.TestCase):
+    def test_energy_counts_only_transparent_pixels(self):
+        energy = chk.transparent_rgb_energy([(10, 20, 30, 0), (100, 100, 100, 255),
+                                             (1, 2, 3, 0), (5, 5, 5, 31)])
+        self.assertEqual(energy, 10 + 20 + 30 + 1 + 2 + 3)
+
+    def test_zero_energy_passes(self):
+        self.assertEqual(chk.transparent_bleed_errors(0, documented=False), [])
+        self.assertEqual(chk.transparent_bleed_errors(0, documented=True), [])
+
+    def test_undocumented_energy_fails(self):
+        errs = chk.transparent_bleed_errors(78_000, documented=False)
+        self.assertTrue(any("raw ADD" in e for e in errs), errs)
+        self.assertTrue(any("transparent_rgb_bleed" in e for e in errs), errs)
+
+    def test_documented_bleed_passes(self):
+        self.assertEqual(chk.transparent_bleed_errors(78_000, documented=True), [])
 
 
 class _FakeImage:
@@ -396,6 +416,13 @@ class EndToEndTests(unittest.TestCase):
             self.assertEqual(committed_hash, fresh_hash, png_rel)
             recorded = json.loads((repo_root / json_rel).read_text(encoding="utf-8"))
             self.assertEqual(recorded["pixel_hash"], committed_hash, json_rel)
+
+    def test_vfx_transparent_pixels_carry_no_rgb(self):
+        """Additive gate: zero RGB energy behind alpha == 0 (raw-ADD safe)."""
+        for png_rel in ("assets/vfx/T_VX_Splash_A.png", "assets/vfx/T_VX_Wake_A.png"):
+            with Image.open(self.root / png_rel) as img:
+                energy = chk.transparent_rgb_energy(chk._rgba_tuples(img.tobytes()))
+            self.assertEqual(energy, 0, png_rel)
 
 
 if __name__ == "__main__":
