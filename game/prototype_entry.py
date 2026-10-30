@@ -32,7 +32,7 @@ from rr.core.prototype import (
     PrototypeConfig,
     TeleportGuard,
     controls,
-    forces,
+    frame_forces,
     hud_text,
     prompt_text,
 )
@@ -208,29 +208,34 @@ class Session:
     # ---------------- driving ----------------
 
     def drive(self, dt, down):
-        cfg = self.cfg
+        """Stroke and steer. Playing only: thrust must not exist in other modes."""
         left_down, right_down, direction = controls(down)
         before = tuple(oar.phase for oar in self.oars)
         outputs = (self.oars[0].update(dt, left_down, direction),
                    self.oars[1].update(dt, right_down, direction))
         self.stroke_audio(before, tuple(oar.phase for oar in self.oars))
+        self.apply_forces(sum(out.thrust for out in outputs),
+                          sum(out.torque_z for out in outputs))
+        self.contain_banks()
+        self.clamp_motion()
+        self.splash_audio(tuple(self.body.worldLinearVelocity))
+
+    def apply_forces(self, thrust, paddle_torque):
+        """One force step for the current mode; `rr.core.prototype` owns the split."""
         body = self.body
-        velocity = tuple(body.worldLinearVelocity)
-        world, torque = forces(
-            cfg,
+        world, torque = frame_forces(
+            self.cfg,
+            self.game.mode,
             body.worldPosition.z,
-            velocity,
+            tuple(body.worldLinearVelocity),
             body.worldOrientation.to_euler().z,
             body.localAngularVelocity.z,
-            sum(out.thrust for out in outputs),
-            sum(out.torque_z for out in outputs),
+            thrust,
+            paddle_torque,
             self.game.elapsed,
         )
         body.applyForce(world, False)
         body.applyTorque((0.0, 0.0, torque), False)
-        self.contain_banks()
-        self.clamp_motion()
-        self.splash_audio(velocity)
 
     def contain_banks(self):
         """Keep the raft in the water without a hard wall: a damped spring push."""
@@ -405,8 +410,13 @@ class Session:
         else:
             down, edges = self.poll_keys()
             self.handle_commands(edges, self.poll_pointer())
-        if self.game.mode == "playing" and self.teleport_guard.step():
-            self.drive(dt, down & PADDLE_KEYS)
+        if self.teleport_guard.step():
+            # Bullet keeps integrating in every mode, so heave must be applied
+            # outside "playing" too; only strokes and steering are playing-only.
+            if self.game.mode == "playing":
+                self.drive(dt, down & PADDLE_KEYS)
+            else:
+                self.apply_forces(0.0, 0.0)
         self.game.advance(dt, self.body.worldPosition.y)
         if self.game.respawn_pending:
             self.place_body(self.game.checkpoint_y)

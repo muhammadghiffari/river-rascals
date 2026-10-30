@@ -367,6 +367,46 @@ class EntryTests(unittest.TestCase):
         self.h.device.played.append("C:\\repo\\assets\\audio\\music\\MUS_Menu_01.ogg")
         self.assertTrue(self.h.cues("music/MUS_Menu_01.ogg"))
 
+    def test_menu_idle_applies_heave_without_thrust(self):
+        """Bullet keeps simulating in the menu, so heave must be applied there too."""
+        self.h.frames(4)          # the spawn teleport guard mutes the first two frames
+        world = self.h.body.forces[-1]
+        self.assertGreater(world[2], 0.0)
+        self.assertEqual((world[0], world[1]), (0.0, 0.0))
+        self.assertEqual(self.h.body.torques[-1], (0.0, 0.0, 0.0))
+
+    def test_paused_keeps_the_heave_force(self):
+        session = self.h.session
+        self.h.hold("ENTERKEY")
+        self.h.frames(2)
+        self.h.hold("PKEY")
+        self.h.frames()
+        self.assertEqual(session.game.mode, "paused")
+        self.h.body.forces.clear()
+        self.h.frames()
+        self.assertGreater(self.h.body.forces[-1][2], 0.0)
+
+    def test_complete_keeps_the_heave_force(self):
+        session = self.h.session
+        self.h.hold("ENTERKEY")
+        self.h.frames(2)
+        self.h.hold()
+        self.h.body.worldPosition = (0.0, session.game.cfg.finish_y, 0.31)
+        self.h.frames()
+        self.assertEqual(session.game.mode, "complete")
+        self.h.body.forces.clear()
+        self.h.frames()
+        self.assertGreater(self.h.body.forces[-1][2], 0.0)
+
+    def test_teleport_guard_mutes_forces_in_non_playing_modes(self):
+        session = self.h.session
+        session.place_body(session.cfg.start_y)
+        self.h.body.forces.clear()
+        self.h.frames(2)
+        self.assertEqual(self.h.body.forces, [], "forces leaked through the guard")
+        self.h.frames()
+        self.assertTrue(self.h.body.forces, "heave never resumed in the menu")
+
 
 class PathFlavourTests(unittest.TestCase):
     """The adapter hands `aud` a native path, so cue assertions must normalise.

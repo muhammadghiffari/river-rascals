@@ -36,6 +36,18 @@ def controls(keys: set[str]) -> tuple[bool, bool, int]:
         -1 if keys & {"S", "DOWN"} else 1)
 
 
+def heave(cfg, z, vz, time):
+    """Upward spring-damper force of the equivalent six-sample hull.
+
+    Mode-independent: Bullet integrates gravity in menu, pause and results just
+    as it does while playing, so this force is needed in every lifecycle mode
+    (`frame_forces` decides that). One heave spring replaces the six samples.
+    """
+    water = cfg.wave_amplitude * sin(time * cfg.wave_frequency)
+    depth = water - (z - cfg.raft_height / 2)
+    return max(0.0, min(cfg.max_force, cfg.stiffness * depth - cfg.damping * vz))
+
+
 def forces(cfg, z, velocity, yaw, spin, thrust, paddle_torque, time):
     """World force + Z torque; Bullet supplies integration and contacts.
 
@@ -48,14 +60,25 @@ def forces(cfg, z, velocity, yaw, spin, thrust, paddle_torque, time):
     local_y = -s * vx + c * (vy - cfg.flow_speed)
     fx = -cfg.lateral_drag * abs(local_x) * local_x
     fy = -cfg.forward_drag * abs(local_y) * local_y + thrust
-    water = cfg.wave_amplitude * sin(time * cfg.wave_frequency)
-    depth = water - (z - cfg.raft_height / 2)
-    fz = max(0, min(cfg.max_force, cfg.stiffness * depth - cfg.damping * vz))
+    fz = heave(cfg, z, vz, time)
     world = (c * fx - s * fy, s * fx + c * fy, fz)
     magnitude = sqrt(sum(value * value for value in world))
     scale = min(1, cfg.max_force / max(magnitude, 1))
     torque = max(-cfg.max_torque, min(cfg.max_torque, paddle_torque - cfg.yaw_drag * spin))
     return tuple(value * scale for value in world), torque
+
+
+def frame_forces(cfg, mode, z, velocity, yaw, spin, thrust, paddle_torque, time):
+    """Mode-aware force step: heave everywhere, thrust and steering only playing.
+
+    Menu, pause and results still simulate the body, so dropping heave there lets
+    gravity win and the raft leaves the surface. Measured in UPBGE before this
+    split: z fell from 0.314 m to -352.8 m during an 8 s menu idle, while the
+    scripted smoke (playing from frame 1) floated at 0.2887..0.3393 m and passed.
+    """
+    if mode == "playing":
+        return forces(cfg, z, velocity, yaw, spin, thrust, paddle_torque, time)
+    return (0.0, 0.0, heave(cfg, z, velocity[2], time)), 0.0
 
 
 class TeleportGuard:
