@@ -33,6 +33,8 @@ Blend assumptions (documented per docs/04 "no baked light unless documented"):
   - Transparent pixels carry zero RGB energy (checker-enforced): under raw ADD
     any RGB hidden behind alpha == 0 would haze the whole quad.
 
+Requirements: Pillow >= 9.1 (uses Image.Resampling), numpy.
+
 Pure helpers (numpy only, no Pillow) are importable by tests: icon_atlas_layout,
 splash_droplets, splash_intensity_field, wake_intensity_field, periodic_noise,
 downsample_mean. Pillow is imported lazily-guarded; rendering functions raise a
