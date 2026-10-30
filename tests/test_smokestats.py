@@ -7,6 +7,7 @@ from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from rr.core.benchstats import BenchStats  # noqa: E402
 from rr.core.smokestats import (  # noqa: E402
     FPS_CROSSCHECK_SEMANTICS,
     FPS_CROSSCHECK_SOURCE,
@@ -87,7 +88,7 @@ class CrosscheckTests(unittest.TestCase):
 
 
 class ReportGateTests(unittest.TestCase):
-    def _stats(self, fps=60.0):
+    def _stats(self, fps: float = 60.0) -> BenchStats:
         return {
             "fps_avg": fps,
             "fps_min": fps - 5.0,
@@ -98,7 +99,7 @@ class ReportGateTests(unittest.TestCase):
             "measured_s": 15.0,
         }
 
-    def _empty_stats(self):
+    def _empty_stats(self) -> BenchStats:
         return {
             "fps_avg": None,
             "fps_min": None,

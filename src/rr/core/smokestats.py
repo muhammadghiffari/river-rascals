@@ -34,6 +34,8 @@ import math
 import statistics
 from collections.abc import Sequence
 
+from rr.core.benchstats import BenchStats
+
 FPS_CROSSCHECK_SOURCE = "bge.logic.getAverageFrameRate() sampled once per second"
 FPS_CROSSCHECK_SEMANTICS = (
     "engine's own estimate; it includes engine startup and the warmup window and "
@@ -109,7 +111,7 @@ def build_smoke_report(
     *,
     seconds: float,
     warmup_s: float,
-    frame_time_stats: dict,
+    frame_time_stats: BenchStats,
     fps_crosscheck: dict,
     distance_moved_m: float,
     expect_movement: bool,
