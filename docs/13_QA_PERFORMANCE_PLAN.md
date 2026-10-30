@@ -7,7 +7,7 @@ Unit (core logic, every PR) → static gates (lint/compile/JSON/secrets/LFS) →
 | Tier | Machine | Preset | Target |
 |---|---|---|---|
 | A | ASUS V16 | High, 1080p | ≥ 60 fps avg, 1% low ≥ 45 |
-| B | mid-spec laptop | Low/Medium, 1080p (scale ≥ 75 %) | ≥ 30 fps avg, 1% low ≥ 24 (re-baseline after F-05) |
+| B | Acer Aspire A515-45 (P1) | Low/Medium, 1080p (scale ≥ 75 %) | ≥ 30 fps avg, 1% low ≥ 24 (re-baseline after F-05) |
 | C (optional) | any older laptop/iGPU | Low, 720p | ≥ 24 fps |
 Budgets: see `04` §4 and `03` §7. Metrics recorded per milestone in `docs/reports/perf_<milestone>.md` with a table: scene, preset, resolution, fps avg/min/p5, RAM, VRAM, draw calls, tris.
 
