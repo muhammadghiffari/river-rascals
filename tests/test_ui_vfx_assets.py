@@ -5,6 +5,7 @@ Pillow. End-to-end render+check tests need Pillow and are skipped when it is
 missing; generator helpers need numpy and are skipped when numpy is missing.
 """
 
+import json
 import os
 import sys
 import tempfile
@@ -129,6 +130,43 @@ class AdditiveBrightnessTests(unittest.TestCase):
         lum, cnt = chk.min_visible_luminance([(10, 10, 10, 0)])
         errs = chk.additive_errors(lum, cnt)
         self.assertTrue(any("no visible pixels" in e for e in errs), errs)
+
+
+class _FakeImage:
+    """Stands in for a PIL image in pixel-hash unit tests (no Pillow needed)."""
+
+    def __init__(self, raw: bytes):
+        self._raw = raw
+
+    def convert(self, _mode):
+        return self
+
+    def tobytes(self) -> bytes:
+        return self._raw
+
+
+class PixelHashTests(unittest.TestCase):
+    REF = "a" * 64
+
+    def test_matching_hash_passes(self):
+        img = _FakeImage(b"\x00\xff\x00\xff" * 4)
+        meta = {"pillow_version": "13.0.0", "numpy_version": "2.5.4",
+                "pixel_hash": chk.pixel_sha256(img)}
+        self.assertEqual(chk.pixel_hash_errors(img, meta, "test"), [])
+
+    def test_mismatched_hash_fails(self):
+        img = _FakeImage(b"\x00\xff\x00\xff" * 4)
+        meta = {"pillow_version": "13.0.0", "numpy_version": "2.5.4",
+                "pixel_hash": PixelHashTests.REF}
+        errs = chk.pixel_hash_errors(img, meta, "test")
+        self.assertTrue(any("pixel_hash mismatch" in e for e in errs), errs)
+
+    def test_missing_meta_fails_cleanly(self):
+        img = _FakeImage(b"\x00" * 16)
+        errs = chk.pixel_hash_errors(img, {}, "test")
+        self.assertTrue(any("pixel_hash" in e for e in errs), errs)
+        self.assertTrue(any("pillow_version" in e for e in errs), errs)
+        self.assertTrue(any("numpy_version" in e for e in errs), errs)
 
 
 @unittest.skipUnless(HAVE_NUMPY, "numpy is required for generator helpers")
@@ -259,6 +297,28 @@ class EndToEndTests(unittest.TestCase):
         self.assertEqual([line for line in bad if line.startswith("FAIL")], [],
                          "\n".join(bad))
         self.assertGreater(len([line for line in ok if line.startswith("PASS")]), 10)
+
+    def test_committed_pixels_match_regeneration(self):
+        """Committed PNGs must decode to exactly what the generator produces now.
+
+        PNG bytes may differ between zlib/Pillow builds, decoded pixels may not;
+        this is the cross-machine reproducibility contract (checked here on this
+        machine against whatever is committed).
+        """
+        repo_root = Path(__file__).resolve().parents[1]
+        atlases = (
+            ("assets/ui/T_UI_IconSet_A.png", "assets/ui/T_UI_IconSet_A.json"),
+            ("assets/vfx/T_VX_Splash_A.png", "assets/vfx/T_VX_Splash_A.json"),
+            ("assets/vfx/T_VX_Wake_A.png", "assets/vfx/T_VX_Wake_A.json"),
+        )
+        for png_rel, json_rel in atlases:
+            with Image.open(repo_root / png_rel) as committed:
+                committed_hash = chk.pixel_sha256(committed)
+            with Image.open(self.root / png_rel) as fresh:
+                fresh_hash = chk.pixel_sha256(fresh)
+            self.assertEqual(committed_hash, fresh_hash, png_rel)
+            recorded = json.loads((repo_root / json_rel).read_text(encoding="utf-8"))
+            self.assertEqual(recorded["pixel_hash"], committed_hash, json_rel)
 
 
 if __name__ == "__main__":

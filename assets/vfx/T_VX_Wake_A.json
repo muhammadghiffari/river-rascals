@@ -7,5 +7,8 @@
   "tileable": "both axes (V arms at 45 deg from apex; integer-cycle modulation)",
   "generated_by": "tools/gen_ui_vfx_assets.py",
   "seed": 20261029,
-  "blend": "ALPHA blend assumed (foam over water); additive-safe too because RGB is bright wherever alpha > 0."
+  "blend": "ALPHA blend assumed (foam over water); additive-safe too because RGB is bright wherever alpha > 0.",
+  "pillow_version": "13.0.0",
+  "numpy_version": "2.5.4",
+  "pixel_hash": "bf6592097dacee2acbb5b48acf85113da0f186bcfa1a94bea16922e4e73ab77b"
 }

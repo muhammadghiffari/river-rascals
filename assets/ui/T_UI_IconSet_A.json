@@ -9,6 +9,9 @@
   "seed": 20261029,
   "naming": "docs/04 s3: T_<Name>_<Type>.png; type A = alpha is load-bearing",
   "blend": "straight alpha",
+  "pillow_version": "13.0.0",
+  "numpy_version": "2.5.4",
+  "pixel_hash": "4264d59ae0ade2b50abf9c768d9bd0fb526f4f78fb57e2417394a1634d7116ef",
   "icons": [
     {
       "name": "coin",

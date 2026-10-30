@@ -17,6 +17,9 @@
   "generated_by": "tools/gen_ui_vfx_assets.py",
   "seed": 20261029,
   "blend": "ADDITIVE assumed: RGB adds light scaled by alpha; every pixel with alpha > 0 is bright foam/white by construction, so it can only brighten the scene. Also usable with straight alpha.",
+  "pillow_version": "13.0.0",
+  "numpy_version": "2.5.4",
+  "pixel_hash": "51e43249a33ab44cd468aad143a918383f7cf2e38e4f4d39d7e6cb0a419450ef",
   "frame_map": [
     {
       "frame": 0,

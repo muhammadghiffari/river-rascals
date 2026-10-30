@@ -2,7 +2,10 @@
 """Deterministic generator for original 2D UI/VFX assets (docs/04 sections 3-5, 9).
 
 Generates from scratch (no downloaded content), with fixed seeds and supersampled
-drawing, so byte-identical output is reproducible on every machine:
+drawing. Decoded pixels are reproducible; committed PNG bytes are NOT guaranteed
+to be identical across machines (different zlib/Pillow builds compress
+differently), so every atlas JSON records the pillow/numpy versions used and a
+sha256 of the DECODED RGBA pixels, which the checker verifies against the PNG:
 
   assets/ui/T_UI_IconSet_A.png    1024x1024 RGBA icon atlas (128 px cells)
   assets/ui/T_UI_IconSet_A.json   atlas map: name, x, y, w, h (+ meta)
@@ -35,6 +38,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 import sys
@@ -488,6 +492,27 @@ def render_wake_strip() -> "Image.Image":
 
 # --- Metadata writers ------------------------------------------------------------
 
+
+def pixel_sha256(img: "Image.Image") -> str:
+    """sha256 over the DECODED RGBA pixels (stable across zlib/Pillow builds)."""
+    return hashlib.sha256(img.convert("RGBA").tobytes()).hexdigest()
+
+
+def _atlas_meta(png_path: Path) -> dict:
+    """Render provenance for one atlas: tool versions + decoded-pixel hash.
+
+    Re-opens the PNG from disk so the hash always describes the bytes actually
+    written, not the in-memory render.
+    """
+    _require_pillow()
+    with Image.open(png_path) as img:
+        return {
+            "pillow_version": Image.__version__,
+            "numpy_version": np.__version__,
+            "pixel_hash": pixel_sha256(img),
+        }
+
+
 UI_JSON_META = {
     "generated_by": "tools/gen_ui_vfx_assets.py",
     "seed": SEED,
@@ -502,6 +527,7 @@ def write_atlas_maps(entries: list[dict], ui_dir: Path, vfx_dir: Path) -> None:
         "size": [UI_ATLAS_SIZE, UI_ATLAS_SIZE],
         "icon_size": ICON_SIZE,
         **UI_JSON_META,
+        **_atlas_meta(ui_dir / "T_UI_IconSet_A.png"),
         "icons": entries,
     }
     (ui_dir / "T_UI_IconSet_A.json").write_text(json.dumps(ui_json, indent=2) + "\n",
@@ -523,6 +549,7 @@ def write_atlas_maps(entries: list[dict], ui_dir: Path, vfx_dir: Path) -> None:
         "blend": ("ADDITIVE assumed: RGB adds light scaled by alpha; every pixel "
                   "with alpha > 0 is bright foam/white by construction, so it can "
                   "only brighten the scene. Also usable with straight alpha."),
+        **_atlas_meta(vfx_dir / "T_VX_Splash_A.png"),
         "frame_map": [
             {"frame": f, "x": (f % SPLASH_GRID) * SPLASH_FRAME_SIZE,
              "y": (f // SPLASH_GRID) * SPLASH_FRAME_SIZE,
@@ -541,6 +568,7 @@ def write_atlas_maps(entries: list[dict], ui_dir: Path, vfx_dir: Path) -> None:
         "seed": SEED,
         "blend": ("ALPHA blend assumed (foam over water); additive-safe too because "
                   "RGB is bright wherever alpha > 0."),
+        **_atlas_meta(vfx_dir / "T_VX_Wake_A.png"),
     }
     (vfx_dir / "T_VX_Wake_A.json").write_text(json.dumps(wake_json, indent=2) + "\n",
                                               encoding="utf-8")

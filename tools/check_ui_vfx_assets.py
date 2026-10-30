@@ -2,9 +2,9 @@
 """Pure-Python checker for the generated UI/VFX atlases (docs/04 sections 3-5).
 
 Validation logic (sizes, power-of-two, alpha presence, atlas-map bounds, seam
-jump, additive brightness) is written against plain Python data structures so it
-is unit-testable without Pillow. Pillow is imported lazily and is only used to
-decode pixels from disk.
+jump, additive brightness, JSON pixel-hash vs decoded PNG) is written against
+plain Python data structures so it is unit-testable without Pillow. Pillow is
+imported lazily and is only used to decode pixels from disk.
 
 Usage: python tools/check_ui_vfx_assets.py [--root .]
 Exit code 1 if any check fails.
@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import math
 import sys
@@ -149,6 +150,35 @@ def additive_errors(min_lum: int, count: int,
     return []
 
 
+def pixel_sha256(img) -> str:
+    """sha256 over the DECODED RGBA pixels (stable across zlib/Pillow builds)."""
+    return hashlib.sha256(img.convert("RGBA").tobytes()).hexdigest()
+
+
+def pixel_hash_errors(img, meta: dict, label: str) -> list[str]:
+    """The atlas JSON's recorded meta must describe exactly this PNG's pixels.
+
+    PNG bytes legitimately differ between zlib/Pillow builds; decoded pixels
+    may not. `meta` must carry pixel_hash plus the pillow/numpy versions that
+    rendered it (informational, but their presence is what makes the hash
+    auditable on another machine).
+    """
+    errors = []
+    for key in ("pillow_version", "numpy_version"):
+        if not meta.get(key):
+            errors.append(f"atlas JSON is missing {key} (regenerate with the generator)")
+    recorded = meta.get("pixel_hash")
+    if not recorded or not isinstance(recorded, str):
+        errors.append("atlas JSON is missing pixel_hash (regenerate with the generator)")
+        return errors
+    actual = pixel_sha256(img)
+    if actual != recorded:
+        errors.append(
+            f"pixel_hash mismatch on {label}: JSON records {recorded[:16]}... "
+            f"but the PNG decodes to {actual[:16]}... (stale JSON or different image)")
+    return errors
+
+
 # --- Pillow-dependent loading ------------------------------------------------------
 
 
@@ -211,6 +241,8 @@ def run_checks(root: Path) -> tuple[list[str], list[str]]:
     report("ui atlas alpha used", has_used_alpha(ui_img.getchannel("A").tobytes()))
 
     ui_map = json.loads((root / EXPECTED["ui_json"]).read_text(encoding="utf-8"))
+    report("ui atlas pixel hash", pixel_hash_errors(ui_img, ui_map, "T_UI_IconSet_A"),
+           f"pillow {ui_map.get('pillow_version')} / numpy {ui_map.get('numpy_version')}")
     entries = ui_map["icons"]
     report("ui atlas map in bounds", atlas_map_errors(entries, ui_w, ui_h),
            f"{len(entries)} icons")
@@ -236,6 +268,8 @@ def run_checks(root: Path) -> tuple[list[str], list[str]]:
     report("splash dimensions", check_dimensions(sp_w, sp_h), f"{sp_w}x{sp_h}")
     report("splash alpha used", has_used_alpha(sp_img.getchannel("A").tobytes()))
     sp_map = json.loads((root / EXPECTED["splash_json"]).read_text(encoding="utf-8"))
+    report("splash pixel hash", pixel_hash_errors(sp_img, sp_map, "T_VX_Splash_A"),
+           f"pillow {sp_map.get('pillow_version')} / numpy {sp_map.get('numpy_version')}")
     fs = sp_map["frame_size"][0]
     frame_errors = []
     if sp_map["grid"] != [4, 4] or fs != 128 or sp_w != 512:
@@ -257,6 +291,9 @@ def run_checks(root: Path) -> tuple[list[str], list[str]]:
     wk_w, wk_h = wk_img.size
     report("wake dimensions", check_dimensions(wk_w, wk_h), f"{wk_w}x{wk_h}")
     report("wake alpha used", has_used_alpha(wk_img.getchannel("A").tobytes()))
+    wk_map = json.loads((root / EXPECTED["wake_json"]).read_text(encoding="utf-8"))
+    report("wake pixel hash", pixel_hash_errors(wk_img, wk_map, "T_VX_Wake_A"),
+           f"pillow {wk_map.get('pillow_version')} / numpy {wk_map.get('numpy_version')}")
     rows = _luma_rows(wk_img)
     v = seam_metrics(rows)
     report("wake tileable along length (vertical seam)",
