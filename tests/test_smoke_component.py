@@ -150,6 +150,31 @@ class SmokeComponentTests(unittest.TestCase):
         self.assertEqual(ended, [])
         self.assertFalse((self.tmp / "smoke_result.json").exists())
 
+    def test_legacy_scene_args_only_seconds_still_works(self):
+        # Scenes saved before the component grew the later args store only
+        # "Seconds"; start() must not KeyError and must use the defaults.
+        ended = []
+        smoke = _load_smoke(_fake_bge(lambda: 60.0, ended))
+        comp = smoke.SmokeTest.__new__(smoke.SmokeTest)
+        comp.object = SimpleNamespace(worldPosition=[0.0, 0.0, 0.0])
+        clock = FakeClock()
+        env = {
+            "RR_SMOKE": "1",
+            "RR_SMOKE_SECONDS": "20",
+            "RR_SMOKE_OUT": str(self.tmp / "smoke_result.json"),
+        }
+        with patch.dict(os.environ, env):
+            with patch("time.time", side_effect=clock.wall), \
+                    patch("time.perf_counter", side_effect=clock.perf):
+                comp.start({"Seconds": 20.0})
+                for _ in range(FRAMES):
+                    clock.step()
+                    comp.update()
+        report = json.loads((self.tmp / "smoke_result.json").read_text())
+        self.assertEqual(report["warmup_s"], 3.0)
+        self.assertTrue(report["expect_movement"])
+        self.assertEqual(ended, [True])
+
     def test_autopaddle_flag_is_set_for_moving_scenes(self):
         ended = []
         fake = _fake_bge(lambda: 60.0, ended)

@@ -72,9 +72,11 @@ class SmokeTest(bge.types.KX_PythonComponent):
         self.enabled = os.environ.get("RR_SMOKE") == "1"
         if not self.enabled:
             return
-        self.duration = _env_float("RR_SMOKE_SECONDS", args["Seconds"])
-        self.warmup = _env_float("RR_SMOKE_WARMUP", args["Warmup Seconds"])
-        self.expect_movement = _env_bool("RR_SMOKE_EXPECT_MOVEMENT", args["Expect Movement"])
+        self.duration = _env_float("RR_SMOKE_SECONDS", args.get("Seconds", DEFAULT_SECONDS))
+        # .get() with defaults: scenes saved before the component gained the
+        # later args only store "Seconds" (bench.py uses the same pattern).
+        self.warmup = _env_float("RR_SMOKE_WARMUP", args.get("Warmup Seconds", DEFAULT_WARMUP_SECONDS))
+        self.expect_movement = _env_bool("RR_SMOKE_EXPECT_MOVEMENT", args.get("Expect Movement", True))
         self.out = _env_str("RR_SMOKE_OUT", DEFAULT_OUT)
         self.t0 = time.time()
         self.prev_frame_tick = None
