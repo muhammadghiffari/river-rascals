@@ -16,8 +16,9 @@ import csv
 import hashlib
 import json
 import math
+import re
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 try:  # only needed to decode pixels; the checks below stay importable without it
     from PIL import Image
@@ -25,9 +26,11 @@ except ImportError:  # pragma: no cover
     Image = None
 
 MAX_DIM = 2048  # docs/04 s4: power-of-two, <= 2048
+VFX_MAX_DIM = 512  # docs/04 s4: "VFX sprite ... atlas <= 512"
 VISIBLE_ALPHA = 32  # a pixel is "visible" from here on
 ADDITIVE_MIN_LUMA = 150  # no dark pixels may carry alpha (additive would darken)
 SEAM_RATIO_LIMIT = 1.5  # seam jump may exceed the worst interior step by <= 50%
+TEXTURE_NAME_RE = re.compile(r"^T_[A-Za-z0-9_]+_(BC|E|A)\.png$")
 
 
 # --- Pure checks -----------------------------------------------------------------
@@ -94,6 +97,25 @@ def atlas_map_errors(entries: list[dict], w: int, h: int) -> list[str]:
                     and cell[1] < y + eh:
                 errors.append(f"{name}: overlaps {other} at {cell}")
         seen_cells[name] = (x, y, ew, eh)
+    return errors
+
+
+def texture_naming_errors(rel_path: str, atlas_ref: str | None = None) -> list[str]:
+    """docs/04 s3/s5: T_<Name>_<Type>.png under its class folder (ui or vfx). Pure.
+
+    `atlas_ref` is the file name recorded in the atlas JSON's "atlas" field, if
+    any; it must match the PNG actually on disk.
+    """
+    errors = []
+    p = PurePosixPath(rel_path.replace("\\", "/"))
+    folder = p.parent.as_posix()
+    if folder not in ("assets/ui", "assets/vfx"):
+        errors.append(f"{p.name} must live in assets/ui or assets/vfx (found {folder or '.'})")
+    if not TEXTURE_NAME_RE.match(p.name):
+        errors.append(f"{p.name} does not match T_<Name>_<Type>.png "
+                      "(docs/04 s3: types BC, E, A)")
+    if atlas_ref is not None and atlas_ref != p.name:
+        errors.append(f"atlas JSON references {atlas_ref!r} but the PNG on disk is {p.name!r}")
     return errors
 
 
@@ -182,10 +204,31 @@ def pixel_hash_errors(img, meta: dict, label: str) -> list[str]:
 # --- Pillow-dependent loading ------------------------------------------------------
 
 
-def _load(path: Path):
+def _load_or_fail(root: Path, rel: str, bad: list[str]):
+    """Decode a PNG, turning unreadable/unopenable files into FAIL lines.
+
+    Returns None instead of raising so one bad file cannot traceback the whole
+    run: an unfetched Git LFS pointer (the file starts with the LFS pointer
+    text) and anything PIL cannot decode both become plain FAIL lines.
+    """
+    p = root / rel
     if Image is None:
-        raise RuntimeError("Pillow is required to load images: pip install pillow")
-    return Image.open(path).convert("RGBA")
+        bad.append(f"FAIL {rel}: Pillow is required to decode images (pip install pillow)")
+        return None
+    try:
+        head = p.open("rb").read(100)
+    except OSError as exc:
+        bad.append(f"FAIL {rel}: cannot read file ({exc})")
+        return None
+    if head.startswith(b"version https://git-lfs"):
+        bad.append(f"FAIL {rel}: unfetched Git LFS pointer (run: git lfs pull)")
+        return None
+    try:
+        with Image.open(p) as img:
+            return img.convert("RGBA")
+    except Exception as exc:  # noqa: BLE001 - any decode failure is a FAIL line, not a crash
+        bad.append(f"FAIL {rel}: PIL cannot decode ({type(exc).__name__}: {exc})")
+        return None
 
 
 def _luma_rows(img) -> list[list[int]]:
@@ -235,76 +278,99 @@ def run_checks(root: Path) -> tuple[list[str], list[str]]:
         return ok, bad
 
     # --- UI icon atlas ---------------------------------------------------------
-    ui_img = _load(root / EXPECTED["ui_atlas"])
-    ui_w, ui_h = ui_img.size
-    report("ui atlas dimensions", check_dimensions(ui_w, ui_h), f"{ui_w}x{ui_h}")
-    report("ui atlas alpha used", has_used_alpha(ui_img.getchannel("A").tobytes()))
+    ui_img = _load_or_fail(root, EXPECTED["ui_atlas"], bad)
+    if ui_img is not None:
+        ui_w, ui_h = ui_img.size
+        report("ui atlas naming + folder",
+               texture_naming_errors(EXPECTED["ui_atlas"]), f"{EXPECTED['ui_atlas']}")
+        report("ui atlas dimensions", check_dimensions(ui_w, ui_h), f"{ui_w}x{ui_h}")
+        report("ui atlas alpha used", has_used_alpha(ui_img.getchannel("A").tobytes()))
 
-    ui_map = json.loads((root / EXPECTED["ui_json"]).read_text(encoding="utf-8"))
-    report("ui atlas pixel hash", pixel_hash_errors(ui_img, ui_map, "T_UI_IconSet_A"),
-           f"pillow {ui_map.get('pillow_version')} / numpy {ui_map.get('numpy_version')}")
-    entries = ui_map["icons"]
-    report("ui atlas map in bounds", atlas_map_errors(entries, ui_w, ui_h),
-           f"{len(entries)} icons")
-    with (root / EXPECTED["ui_csv"]).open(encoding="utf-8") as fh:
-        csv_rows = list(csv.DictReader(fh))
-    csv_match = [{k: int(v) if k != "name" else v for k, v in r.items()} for r in csv_rows]
-    report("ui csv matches json", [] if csv_match == entries else ["CSV rows differ from JSON icons"])
+        ui_map = json.loads((root / EXPECTED["ui_json"]).read_text(encoding="utf-8"))
+        report("ui atlas json naming", texture_naming_errors(EXPECTED["ui_atlas"],
+                                                             ui_map.get("atlas")),
+               f"json atlas ref {ui_map.get('atlas')!r}")
+        report("ui atlas pixel hash", pixel_hash_errors(ui_img, ui_map, "T_UI_IconSet_A"),
+               f"pillow {ui_map.get('pillow_version')} / numpy {ui_map.get('numpy_version')}")
+        entries = ui_map["icons"]
+        report("ui atlas map in bounds", atlas_map_errors(entries, ui_w, ui_h),
+               f"{len(entries)} icons")
+        with (root / EXPECTED["ui_csv"]).open(encoding="utf-8") as fh:
+            csv_rows = list(csv.DictReader(fh))
+        csv_match = [{k: int(v) if k != "name" else v for k, v in r.items()} for r in csv_rows]
+        report("ui csv matches json",
+               [] if csv_match == entries else ["CSV rows differ from JSON icons"])
 
-    for e in entries:
-        cell = _cell_rgba(ui_img, e["x"], e["y"], e["w"], e["h"])
-        stats = alpha_usage_stats(px[3] for px in cell)
-        errs = []
-        if stats["visible"] == 0:
-            errs.append(f"icon {e['name']} cell has no visible pixels")
-        if stats["transparent"] == 0:
-            errs.append(f"icon {e['name']} cell has no transparent pixels (not an icon cut-out)")
-        report(f"icon {e['name']}", errs,
-               f"{stats['visible']} visible px")
+        for e in entries:
+            cell = _cell_rgba(ui_img, e["x"], e["y"], e["w"], e["h"])
+            stats = alpha_usage_stats(px[3] for px in cell)
+            errs = []
+            if stats["visible"] == 0:
+                errs.append(f"icon {e['name']} cell has no visible pixels")
+            if stats["transparent"] == 0:
+                errs.append(f"icon {e['name']} cell has no transparent pixels (not an icon cut-out)")
+            report(f"icon {e['name']}", errs,
+                   f"{stats['visible']} visible px")
 
     # --- splash sheet ------------------------------------------------------------
-    sp_img = _load(root / EXPECTED["splash"])
-    sp_w, sp_h = sp_img.size
-    report("splash dimensions", check_dimensions(sp_w, sp_h), f"{sp_w}x{sp_h}")
-    report("splash alpha used", has_used_alpha(sp_img.getchannel("A").tobytes()))
-    sp_map = json.loads((root / EXPECTED["splash_json"]).read_text(encoding="utf-8"))
-    report("splash pixel hash", pixel_hash_errors(sp_img, sp_map, "T_VX_Splash_A"),
-           f"pillow {sp_map.get('pillow_version')} / numpy {sp_map.get('numpy_version')}")
-    fs = sp_map["frame_size"][0]
-    frame_errors = []
-    if sp_map["grid"] != [4, 4] or fs != 128 or sp_w != 512:
-        frame_errors.append(f"unexpected layout {sp_map['grid']} frame {fs} atlas {sp_w}")
-    # frame 0 must burst (bright visible pixels), frame 15 must have faded out
-    f0 = _cell_rgba(sp_img, 0, 0, fs, fs)
-    if alpha_usage_stats(px[3] for px in f0)["visible"] < 64:
-        frame_errors.append("frame 0 has almost no visible pixels")
-    f15 = _cell_rgba(sp_img, 3 * fs, 3 * fs, fs, fs)
-    if alpha_usage_stats(px[3] for px in f15)["visible"] > 0:
-        frame_errors.append("frame 15 has not fully faded")
-    report("splash frame layout + fade", frame_errors)
-    lum, cnt = min_visible_luminance(_rgba_tuples(sp_img.tobytes()))
-    report("splash additive-friendly", additive_errors(lum, cnt),
-           f"min visible max-channel {lum} over {cnt} px")
+    sp_img = _load_or_fail(root, EXPECTED["splash"], bad)
+    if sp_img is not None:
+        sp_w, sp_h = sp_img.size
+        report("splash naming + folder", texture_naming_errors(EXPECTED["splash"]),
+               f"{EXPECTED['splash']}")
+        # docs/04 s4: VFX sprite atlas <= 512 (tighter than the global 2048)
+        report("splash dimensions", check_dimensions(sp_w, sp_h, max_dim=VFX_MAX_DIM),
+               f"{sp_w}x{sp_h} (VFX atlas limit {VFX_MAX_DIM})")
+        report("splash alpha used", has_used_alpha(sp_img.getchannel("A").tobytes()))
+        sp_map = json.loads((root / EXPECTED["splash_json"]).read_text(encoding="utf-8"))
+        report("splash json naming", texture_naming_errors(EXPECTED["splash"],
+                                                           sp_map.get("atlas")),
+               f"json atlas ref {sp_map.get('atlas')!r}")
+        report("splash pixel hash", pixel_hash_errors(sp_img, sp_map, "T_VX_Splash_A"),
+               f"pillow {sp_map.get('pillow_version')} / numpy {sp_map.get('numpy_version')}")
+        fs = sp_map["frame_size"][0]
+        frame_errors = []
+        if sp_map["grid"] != [4, 4] or fs != 128 or sp_w != 512:
+            frame_errors.append(f"unexpected layout {sp_map['grid']} frame {fs} atlas {sp_w}")
+        # frame 0 must burst (bright visible pixels), frame 15 must have faded out
+        f0 = _cell_rgba(sp_img, 0, 0, fs, fs)
+        if alpha_usage_stats(px[3] for px in f0)["visible"] < 64:
+            frame_errors.append("frame 0 has almost no visible pixels")
+        f15 = _cell_rgba(sp_img, 3 * fs, 3 * fs, fs, fs)
+        if alpha_usage_stats(px[3] for px in f15)["visible"] > 0:
+            frame_errors.append("frame 15 has not fully faded")
+        report("splash frame layout + fade", frame_errors)
+        lum, cnt = min_visible_luminance(_rgba_tuples(sp_img.tobytes()))
+        report("splash additive-friendly", additive_errors(lum, cnt),
+               f"min visible max-channel {lum} over {cnt} px")
 
     # --- wake strip ----------------------------------------------------------------
-    wk_img = _load(root / EXPECTED["wake"])
-    wk_w, wk_h = wk_img.size
-    report("wake dimensions", check_dimensions(wk_w, wk_h), f"{wk_w}x{wk_h}")
-    report("wake alpha used", has_used_alpha(wk_img.getchannel("A").tobytes()))
-    wk_map = json.loads((root / EXPECTED["wake_json"]).read_text(encoding="utf-8"))
-    report("wake pixel hash", pixel_hash_errors(wk_img, wk_map, "T_VX_Wake_A"),
-           f"pillow {wk_map.get('pillow_version')} / numpy {wk_map.get('numpy_version')}")
-    rows = _luma_rows(wk_img)
-    v = seam_metrics(rows)
-    report("wake tileable along length (vertical seam)",
-           tileable_errors(v), f"seam {v['seam']:.1f} interior {v['interior']:.1f} ratio {v['ratio']:.2f}")
-    cols = _luma_rows(wk_img.transpose(Image.Transpose.ROTATE_90))
-    hz = seam_metrics(cols)
-    report("wake tileable across width (horizontal seam)", tileable_errors(hz),
-           f"seam {hz['seam']:.1f} interior {hz['interior']:.1f} ratio {hz['ratio']:.2f}")
-    lum, cnt = min_visible_luminance(_rgba_tuples(wk_img.tobytes()))
-    report("wake additive-safe", additive_errors(lum, cnt),
-           f"min visible max-channel {lum} over {cnt} px")
+    wk_img = _load_or_fail(root, EXPECTED["wake"], bad)
+    if wk_img is not None:
+        wk_w, wk_h = wk_img.size
+        report("wake naming + folder", texture_naming_errors(EXPECTED["wake"]),
+               f"{EXPECTED['wake']}")
+        report("wake dimensions", check_dimensions(wk_w, wk_h, max_dim=VFX_MAX_DIM),
+               f"{wk_w}x{wk_h} (VFX atlas limit {VFX_MAX_DIM})")
+        report("wake alpha used", has_used_alpha(wk_img.getchannel("A").tobytes()))
+        wk_map = json.loads((root / EXPECTED["wake_json"]).read_text(encoding="utf-8"))
+        report("wake json naming", texture_naming_errors(EXPECTED["wake"],
+                                                         wk_map.get("atlas")),
+               f"json atlas ref {wk_map.get('atlas')!r}")
+        report("wake pixel hash", pixel_hash_errors(wk_img, wk_map, "T_VX_Wake_A"),
+               f"pillow {wk_map.get('pillow_version')} / numpy {wk_map.get('numpy_version')}")
+        rows = _luma_rows(wk_img)
+        v = seam_metrics(rows)
+        report("wake tileable along length (vertical seam)",
+               tileable_errors(v),
+               f"seam {v['seam']:.1f} interior {v['interior']:.1f} ratio {v['ratio']:.2f}")
+        cols = _luma_rows(wk_img.transpose(Image.Transpose.ROTATE_90))
+        hz = seam_metrics(cols)
+        report("wake tileable across width (horizontal seam)", tileable_errors(hz),
+               f"seam {hz['seam']:.1f} interior {hz['interior']:.1f} ratio {hz['ratio']:.2f}")
+        lum, cnt = min_visible_luminance(_rgba_tuples(wk_img.tobytes()))
+        report("wake additive-safe", additive_errors(lum, cnt),
+               f"min visible max-channel {lum} over {cnt} px")
 
     return ok, bad
 

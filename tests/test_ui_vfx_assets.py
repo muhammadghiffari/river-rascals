@@ -278,6 +278,83 @@ class NumericHelperTests(unittest.TestCase):
         self.assertEqual(rgb[0, 1].tolist(), [255, 255, 255])
 
 
+class NamingTests(unittest.TestCase):
+    def test_valid_names(self):
+        for rel in ("assets/ui/T_UI_IconSet_A.png", "assets/vfx/T_VX_Splash_A.png",
+                    "assets/vfx/T_VX_Wake_A.png", "assets/ui/T_Hud_BC.png"):
+            self.assertEqual(chk.texture_naming_errors(rel), [], rel)
+
+    def test_bad_pattern(self):
+        for rel in ("assets/ui/icons.png", "assets/ui/T_icons.png",
+                    "assets/ui/T_UI_IconSet_X.png", "assets/ui/T_UI_IconSet_A.jpg"):
+            errs = chk.texture_naming_errors(rel)
+            self.assertTrue(any("does not match" in e for e in errs), (rel, errs))
+
+    def test_bad_folder(self):
+        errs = chk.texture_naming_errors("assets/textures/T_UI_IconSet_A.png")
+        self.assertTrue(any("must live in" in e for e in errs), errs)
+
+    def test_atlas_ref_mismatch(self):
+        errs = chk.texture_naming_errors("assets/vfx/T_VX_Splash_A.png",
+                                         "T_VX_Splash_v2.png")
+        self.assertTrue(any("references" in e for e in errs), errs)
+
+    def test_atlas_ref_match_passes(self):
+        self.assertEqual(chk.texture_naming_errors("assets/vfx/T_VX_Splash_A.png",
+                                                   "T_VX_Splash_A.png"), [])
+
+
+class VfxAtlasLimitTests(unittest.TestCase):
+    def test_vfx_limit_is_512(self):
+        self.assertEqual(chk.VFX_MAX_DIM, 512)  # docs/04 s4: VFX sprite atlas <= 512
+
+    def test_oversized_vfx_atlas_fails(self):
+        errs = chk.check_dimensions(1024, 1024, max_dim=chk.VFX_MAX_DIM)
+        self.assertTrue(any("exceeds max" in e for e in errs), errs)
+
+    def test_512_passes(self):
+        self.assertEqual(chk.check_dimensions(512, 512, max_dim=chk.VFX_MAX_DIM), [])
+
+
+class CleanFailureTests(unittest.TestCase):
+    """A broken PNG must produce a FAIL line, never a traceback (review F3)."""
+
+    FILES = chk.EXPECTED
+
+    def _make_root(self, png_bytes: bytes) -> tempfile.TemporaryDirectory:
+        tmp = tempfile.TemporaryDirectory()
+        root = Path(tmp.name)
+        for key, rel in self.FILES.items():
+            p = root / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_bytes(b"{}" if key.endswith("json") else png_bytes)
+        return tmp
+
+    def _run(self, png_bytes: bytes):
+        tmp = self._make_root(png_bytes)
+        try:
+            return chk.run_checks(Path(tmp.name))
+        finally:
+            tmp.cleanup()
+
+    def test_lfs_pointer_fails_cleanly(self):
+        pointer = (b"version https://git-lfs.github.com/spec/v1\n"
+                   b"oid sha256:deadbeef\nsize 123\n")
+        ok, bad = self._run(pointer)
+        fails = [line for line in bad if line.startswith("FAIL")]
+        self.assertGreaterEqual(len(fails), 3, bad)
+        for line in fails:
+            self.assertIn("Git LFS pointer", line, line)
+
+    def test_garbage_png_fails_cleanly(self):
+        ok, bad = self._run(b"definitely not a png")
+        fails = [line for line in bad if line.startswith("FAIL")]
+        self.assertGreaterEqual(len(fails), 3, bad)
+        for line in fails:
+            self.assertTrue("PIL cannot decode" in line or "Pillow is required" in line,
+                            line)
+
+
 @unittest.skipUnless(HAVE_PIL and HAVE_NUMPY, "Pillow + numpy required for rendering")
 class EndToEndTests(unittest.TestCase):
     """Generate into a temp dir, then run the checker over the output."""
