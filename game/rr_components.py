@@ -11,6 +11,7 @@ _SRC = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
 if _SRC not in sys.path:
     sys.path.insert(0, _SRC)
 
+from rr.glue.bench import BenchRecorder  # noqa: E402,F401
 from rr.glue.raft import RaftOars, RaftPhysics  # noqa: E402,F401
 from rr.glue.river_flow import RiverLoader  # noqa: E402,F401
 from rr.glue.smoke import SmokeTest  # noqa: E402,F401

@@ -1,0 +1,33 @@
+/home/hicesse/portable_apps/upbge-0.50-linux-x64/blenderplayer -f 1280 720 32 60 /home/hicesse/river-rascals/game/bench/bench250k_shadow.blend
+exit_code=0 timed_out=False
+----- stdout -----
+GL_VENDOR: AMD
+GL_RENDERER: AMD Radeon R7 M260 Series (radeonsi, oland, ACO, DRM 3.64, 7.0.0-38-generic)
+GL_VERSION: 4.6 (Core Profile) Mesa 26.0.8-1ubuntu0.3
+GL_SHADING_LANGUAGE_VERSION: 4.60
+Supported Extensions...
+ GL_ARB_shader_objects supported?       yes.
+ GL_ARB_geometry_shader4 supported?     no.
+ GL_ARB_vertex_shader supported?        yes.
+ ----------Details----------
+  Max uniform components.16384
+  Max varying floats.128
+  Max vertex texture units.32
+  Max vertex attribs.16
+  Max combined texture units.160
+
+ GL_ARB_fragment_shader supported?      yes.
+ ----------Details----------
+  Max uniform components.16384
+
+ GL_ARB_texture_cube_map supported?     no.
+ GL_ARB_multitexture supported?         no.
+ GL_ARB_texture_env_combine supported?  no.
+ GL_ARB_draw_instanced supported?  yes.
+[rr] benchmark armed: 60.0s measured after 3.0s warmup -> /home/hicesse/.hermes_data/cache/scratch/bench-dgpu/.p3_zbook14g2_dgpu_probe_250k_1280x720.raw.json
+[rr] benchmark wrote /home/hicesse/.hermes_data/cache/scratch/bench-dgpu/.p3_zbook14g2_dgpu_probe_250k_1280x720.raw.json
+[rr] benchmark result: avg 59.8 fps, 1% low 58.6 fps, min 23.8 fps, p99 17.1 ms, 3 stutters, 3331 frames
+[rr] fps cross-check: getAverageFrameRate() min 14.8 fps, avg 16724.6 fps over 60 samples (interval avg 59.8 fps - cumulative from engine start, so the two windows differ)
+Error: totblock: 19
+
+----- stderr -----

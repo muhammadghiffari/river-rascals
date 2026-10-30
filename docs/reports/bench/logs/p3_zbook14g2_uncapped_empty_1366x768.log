@@ -1,0 +1,32 @@
+/home/hicesse/portable_apps/upbge-0.50-linux-x64/blenderplayer -f 1366 768 32 60 /home/hicesse/river-rascals/game/bench/empty_uncapped.blend
+exit_code=0 timed_out=False
+----- stdout -----
+GL_VENDOR: Intel
+GL_RENDERER: Mesa Intel(R) HD Graphics 5500 (BDW GT2)
+GL_VERSION: 4.6 (Core Profile) Mesa 26.0.8-1ubuntu0.3
+GL_SHADING_LANGUAGE_VERSION: 4.60
+Supported Extensions...
+ GL_ARB_shader_objects supported?       yes.
+ GL_ARB_geometry_shader4 supported?     no.
+ GL_ARB_vertex_shader supported?        yes.
+ ----------Details----------
+  Max uniform components.16384
+  Max varying floats.128
+  Max vertex texture units.32
+  Max vertex attribs.16
+  Max combined texture units.160
+
+ GL_ARB_fragment_shader supported?      yes.
+ ----------Details----------
+  Max uniform components.16384
+
+ GL_ARB_texture_cube_map supported?     no.
+ GL_ARB_multitexture supported?         no.
+ GL_ARB_texture_env_combine supported?  no.
+ GL_ARB_draw_instanced supported?  yes.
+[rr] benchmark armed: 60.0s measured after 3.0s warmup -> /home/hicesse/river-rascals/docs/reports/bench/.p3_zbook14g2_uncapped_empty_1366x768.raw.json
+[rr] benchmark wrote /home/hicesse/river-rascals/docs/reports/bench/.p3_zbook14g2_uncapped_empty_1366x768.raw.json
+[rr] benchmark result: avg 141.7 fps, 1% low 87.2 fps, min 20.2 fps, p99 11.5 ms, 35 stutters, 8407 frames
+Error: totblock: 13
+
+----- stderr -----
