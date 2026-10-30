@@ -71,6 +71,7 @@ PROMPT_RECT = (0.28, 0.58, 0.72, 0.82)
 SMOKE = os.environ.get("RR_SMOKE") == "1"
 SMOKE_SECONDS = float(os.environ.get("RR_SMOKE_SECONDS") or 12.0)
 SMOKE_OUT = os.environ.get("RR_SMOKE_OUT") or ""
+SMOKE_MENU_SECONDS = 2.0            # menu idle before the scripted start; see smoke_step
 
 _SESSION = None
 _DISABLED = object()
@@ -85,6 +86,21 @@ def load_config(path=SETTINGS):
 def float_height(cfg):
     """Resting z where the heave spring balances weight, so spawns do not bounce."""
     return cfg.raft_height / 2.0 - cfg.mass * 9.81 / cfg.stiffness
+
+
+def resting_bounds(cfg):
+    """Accepted idle z band: the wave band around `float_height`, plus heave lag.
+
+    The water surface itself moves +/- `wave_amplitude` around the resting
+    height, and the heave damping term can hold the hull
+    `damping * amplitude * frequency / stiffness` (4.2 mm here) away from that
+    band. Both numbers are derived from the existing heave constants, so this
+    quotes the code's own resting-height constants instead of adding a tolerance.
+    """
+    rest = float_height(cfg)
+    wave = cfg.wave_amplitude
+    lag = cfg.damping * wave * cfg.wave_frequency / cfg.stiffness
+    return rest - wave - lag, rest + wave + lag
 
 
 class Session:
@@ -121,7 +137,9 @@ class Session:
         self.teleport_guard = TeleportGuard()
         self.last_splash = float("-inf")
         self.smoke = ({"frames": 0, "seconds": 0.0, "max_y": self.cfg.start_y,
-                       "max_speed": 0.0, "min_z": 1e9, "max_z": -1e9} if SMOKE else None)
+                       "max_speed": 0.0, "min_z": 1e9, "max_z": -1e9,
+                       "menu_frames": 0, "menu_min_z": 1e9, "menu_max_z": -1e9}
+                      if SMOKE else None)
         self.body.collisionCallbacks.append(self.on_collision)
         self.place_body(self.cfg.start_y)
         self.audio.set_mode("menu")
@@ -354,14 +372,25 @@ class Session:
     # ---------------- smoke mode ----------------
 
     def smoke_step(self, dt):
-        """Autopaddle and record what actually happened inside UPBGE."""
+        """Autopaddle and record what actually happened inside UPBGE.
+
+        The menu is idled first (SMOKE_MENU_SECONDS): Bullet keeps gravity on in
+        every mode, so a heave force that only runs while playing shows up as a
+        falling raft here instead of passing unnoticed, as it did before.
+        """
         probe = self.smoke
         probe["frames"] += 1
         probe["seconds"] += dt
+        position = self.body.worldPosition
         if self.game.mode == "menu":
+            probe["menu_frames"] += 1
+            probe["menu_min_z"] = min(probe["menu_min_z"], position.z)
+            probe["menu_max_z"] = max(probe["menu_max_z"], position.z)
+            if probe["seconds"] < SMOKE_MENU_SECONDS:
+                return set()
             self.game.command("start")
             self.place_body(self.cfg.start_y)
-        position = self.body.worldPosition
+            position = self.body.worldPosition
         probe["max_y"] = max(probe["max_y"], position.y)
         probe["max_speed"] = max(probe["max_speed"], self.body.worldLinearVelocity.length)
         probe["min_z"] = min(probe["min_z"], position.z)
@@ -369,8 +398,12 @@ class Session:
         if probe["seconds"] < SMOKE_SECONDS:
             return {"A", "D"}
         audio = self.audio
+        low, high = resting_bounds(self.cfg)
+        menu_ok = (probe["menu_frames"] > 0
+                   and low <= probe["menu_min_z"] <= probe["menu_max_z"] <= high)
         report = {
             "ok": (probe["frames"] > 60
+                   and menu_ok
                    and probe["max_y"] - self.cfg.start_y > 1.0
                    and audio.error_count == 0
                    and self.game.mode in ("playing", "complete")),
@@ -381,6 +414,12 @@ class Session:
             "distance_m": round(probe["max_y"] - self.cfg.start_y, 3),
             "max_speed_mps": round(probe["max_speed"], 3),
             "z_range": [round(probe["min_z"], 4), round(probe["max_z"], 4)],
+            "menu_seconds": SMOKE_MENU_SECONDS,
+            "menu_frames": probe["menu_frames"],
+            "menu_z_range": ([round(probe["menu_min_z"], 4), round(probe["menu_max_z"], 4)]
+                             if probe["menu_frames"] else None),
+            "menu_ok": menu_ok,
+            "rest_z_bounds": [round(low, 4), round(high, 4)],
             "audio_played": dict(audio.played_counts),
             "audio_dropped": dict(audio.dropped_counts),
             "audio_modes": dict(audio.mode_counts),

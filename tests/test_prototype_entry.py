@@ -8,7 +8,9 @@ import contextlib
 import importlib
 import importlib.util
 import io
+import json
 import math
+import os
 import sys
 import unittest
 from collections import defaultdict
@@ -406,6 +408,57 @@ class EntryTests(unittest.TestCase):
         self.assertEqual(self.h.body.forces, [], "forces leaked through the guard")
         self.h.frames()
         self.assertTrue(self.h.body.forces, "heave never resumed in the menu")
+
+
+class SmokeMenuTests(unittest.TestCase):
+    """The smoke must idle in the menu: the pre-fix run passed while the raft fell.
+
+    `RR_SMOKE` used to start playing on frame 1, so menu/paused/complete frames
+    were never simulated and a heave force that only ran while playing was
+    invisible to the gate.
+    """
+
+    def _run(self, seconds, creep=False):
+        with patch.dict(os.environ, {"RR_SMOKE": "1", "RR_SMOKE_SECONDS": seconds}):
+            harness = Harness(self.addCleanup)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            for _ in range(1000):
+                if "PROTOTYPE_SMOKE " in output.getvalue():
+                    break
+                harness.session.update()
+                if creep and harness.session.game.mode == "playing":
+                    position = harness.body.worldPosition
+                    harness.body.worldPosition = (0.0, position.y + 2.0, position.z)
+        line = next(text for text in output.getvalue().splitlines()
+                    if text.startswith("PROTOTYPE_SMOKE "))
+        return harness, json.loads(line[len("PROTOTYPE_SMOKE "):])
+
+    def test_smoke_idles_in_the_menu_before_the_scripted_start(self):
+        harness, report = self._run("2.3", creep=True)
+        self.assertTrue(report["menu_ok"], report)
+        self.assertTrue(report["ok"], report)
+        self.assertGreater(report["menu_frames"], 60)
+        low, high = harness.module.resting_bounds(harness.session.cfg)
+        self.assertGreaterEqual(report["menu_z_range"][0], low)
+        self.assertLessEqual(report["menu_z_range"][1], high)
+
+    def test_smoke_fails_when_the_raft_sinks_in_the_menu(self):
+        with patch.dict(os.environ, {"RR_SMOKE": "1", "RR_SMOKE_SECONDS": "0.1"}):
+            harness = Harness(self.addCleanup)
+        harness.session.update()                      # one frame at the resting height
+        harness.body.worldPosition = (0.0, harness.session.cfg.start_y, 0.0)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            for _ in range(1000):
+                if "PROTOTYPE_SMOKE " in output.getvalue():
+                    break
+                harness.session.update()
+        line = next(text for text in output.getvalue().splitlines()
+                    if text.startswith("PROTOTYPE_SMOKE "))
+        report = json.loads(line[len("PROTOTYPE_SMOKE "):])
+        self.assertFalse(report["menu_ok"], report)
+        self.assertFalse(report["ok"], report)
 
 
 class PathFlavourTests(unittest.TestCase):
