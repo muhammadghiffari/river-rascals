@@ -115,6 +115,59 @@ class SeamTests(unittest.TestCase):
         self.assertTrue(chk.tileable_errors(m))
 
 
+@unittest.skipUnless(HAVE_PIL, "Pillow is required to decode the committed wake PNG")
+class WakeSeamGateTests(unittest.TestCase):
+    """The wake seam gate must measure the ALPHA channel, not luma (review A).
+
+    RGB is zeroed behind alpha == 0, so luma jumps at every alpha edge: the
+    luma worst interior step (238) swamps any seam jump and the 1.5x rule can
+    never fail (ratio 0.00 on the committed texture even when its wrap is
+    torn). On alpha the committed texture must pass, a non-tileable rolled
+    copy must fail, and a uniformly rolled (merely phase-shifted) copy must
+    keep passing.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        png = Path(__file__).resolve().parents[1] / "assets/vfx/T_VX_Wake_A.png"
+        with Image.open(png) as img:
+            cls.rows = chk._alpha_rows(img.convert("RGBA"))
+        cls.cols = [list(col) for col in zip(*cls.rows, strict=True)]
+
+    @staticmethod
+    def _progressively_rolled(rows, total):
+        """Copy with row i rolled round(total * i / (h - 1)) px.
+
+        The rows drift apart by `total` px across the strip, tearing the
+        vertical wrap, while every pixel value is only relocated.
+        """
+        h = len(rows)
+        return [rows[i][off:] + rows[i][:off]
+                for i, off in ((i, round(total * i / (h - 1))) for i in range(h))]
+
+    def test_committed_texture_passes_both_axes(self):
+        for rows in (self.rows, self.cols):
+            m = chk.seam_metrics(rows)
+            self.assertLessEqual(m["ratio"], chk.SEAM_RATIO_LIMIT, m)
+            self.assertEqual(chk.tileable_errors(m), [])
+
+    def test_rolled_copy_fails(self):
+        for total in (40, 97):
+            m = chk.seam_metrics(self._progressively_rolled(self.rows, total))
+            self.assertGreater(m["ratio"], chk.SEAM_RATIO_LIMIT, (total, m))
+            self.assertTrue(chk.tileable_errors(m), total)
+
+    def test_uniform_roll_keeps_passing(self):
+        # a uniform circular roll is a torus translation: the texture stays
+        # tileable, so the gate must not flag it
+        for total in (40, 97):
+            rolled = [r[-total:] + r[:-total] for r in self.rows]
+            rolled_cols = [list(col) for col in zip(*rolled, strict=True)]
+            for rows in (rolled, rolled_cols):
+                m = chk.seam_metrics(rows)
+                self.assertLessEqual(m["ratio"], chk.SEAM_RATIO_LIMIT, (total, m))
+
+
 class MinBrightnessTests(unittest.TestCase):
     """min_visible_luminance is informational only, not a gate."""
 

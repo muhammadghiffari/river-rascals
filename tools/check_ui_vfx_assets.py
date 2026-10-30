@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Pure-Python checker for the generated UI/VFX atlases (docs/04 sections 3-5).
 
-Validation logic (sizes, power-of-two, alpha presence, atlas-map bounds, seam
-jump, transparent-pixel RGB energy, JSON pixel-hash vs decoded PNG) is written
-against plain Python data structures so it is unit-testable without Pillow.
+Validation logic (sizes, power-of-two, alpha presence, atlas-map bounds, wake
+seam jump on the alpha channel, transparent-pixel RGB energy, JSON pixel-hash
+vs decoded PNG) is written against plain Python data structures so it is
+unit-testable without Pillow.
 Pillow is imported lazily and is only used to decode pixels from disk.
 
 Usage: python tools/check_ui_vfx_assets.py [--root .]
@@ -244,10 +245,18 @@ def _load_or_fail(root: Path, rel: str, bad: list[str]):
         return None
 
 
-def _luma_rows(img) -> list[list[int]]:
-    lum = img.convert("L")
-    w, h = lum.size
-    data = lum.tobytes()
+def _alpha_rows(img) -> list[bytes]:
+    """Alpha scanlines for the wake seam gate. Pure.
+
+    The gate must NOT read luma: RGB is zeroed behind alpha == 0 (the additive
+    gate), so luma jumps at every alpha edge and the worst interior step is the
+    silhouette itself, which deadens the seam/interior ratio (0.00 on a wake
+    whose wrap is torn). Alpha is the foam silhouette the tiling actually
+    repeats, so the seam/interior ratio is computed on it.
+    """
+    a = img.getchannel("A")
+    w, h = a.size
+    data = a.tobytes()
     return [data[y * w:(y + 1) * w] for y in range(h)]
 
 
@@ -382,15 +391,15 @@ def run_checks(root: Path) -> tuple[list[str], list[str]]:
                f"json atlas ref {wk_map.get('atlas')!r}")
         report("wake pixel hash", pixel_hash_errors(wk_img, wk_map, "T_VX_Wake_A"),
                f"pillow {wk_map.get('pillow_version')} / numpy {wk_map.get('numpy_version')}")
-        rows = _luma_rows(wk_img)
+        rows = _alpha_rows(wk_img)
         v = seam_metrics(rows)
         report("wake tileable along length (vertical seam)",
                tileable_errors(v),
-               f"seam {v['seam']:.1f} interior {v['interior']:.1f} ratio {v['ratio']:.2f}")
-        cols = _luma_rows(wk_img.transpose(Image.Transpose.ROTATE_90))
+               f"alpha seam {v['seam']:.1f} interior {v['interior']:.1f} ratio {v['ratio']:.2f}")
+        cols = _alpha_rows(wk_img.transpose(Image.Transpose.ROTATE_90))
         hz = seam_metrics(cols)
         report("wake tileable across width (horizontal seam)", tileable_errors(hz),
-               f"seam {hz['seam']:.1f} interior {hz['interior']:.1f} ratio {hz['ratio']:.2f}")
+               f"alpha seam {hz['seam']:.1f} interior {hz['interior']:.1f} ratio {hz['ratio']:.2f}")
         wk_energy = transparent_rgb_energy(_rgba_tuples(wk_img.tobytes()))
         report("wake transparent-pixel RGB energy",
                transparent_bleed_errors(wk_energy,
