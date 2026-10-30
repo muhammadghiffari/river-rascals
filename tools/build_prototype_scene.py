@@ -31,13 +31,30 @@ BLEND = ROOT / "game/main.blend"
 BUILD = ROOT / "tools/blender/build_prototype.py"
 WIRE = ROOT / "tools/blender/wire_prototype_logic.py"
 VERIFY = ROOT / "tools/blender/verify_prototype_scene.py"
+
+
+def _partial_output(exc: subprocess.TimeoutExpired) -> str:
+    """Return the partial stdout/stderr of a timed-out run as text.
+
+    Python < 3.12.6 keeps the captured output as bytes even in text mode,
+    Python >= 3.12.6 returns already-decoded str (gh-72016). Accept both so
+    the diagnostics are never dropped.
+    """
+    parts = []
+    for part in (exc.stdout, exc.stderr):
+        if isinstance(part, bytes):
+            parts.append(part.decode(errors="replace"))
+        elif isinstance(part, str):
+            parts.append(part)
+    return "\n".join(parts)
+
+
 def run(label: str, argv: list[str], marker: str, timeout: int = 300) -> tuple[bool, str]:
     print(f"--- {label}: {' '.join(argv)}")
     try:
         done = subprocess.run(argv, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired as exc:
-        output = b"\n".join(part for part in (exc.stdout, exc.stderr) if isinstance(part, bytes))
-        text = output.decode(errors="replace")
+        text = _partial_output(exc)
         print(text)
         print(f"FAILED: {label} timeout after {timeout}s")
         return False, text
