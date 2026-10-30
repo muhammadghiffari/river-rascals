@@ -195,9 +195,37 @@ the same machine class that produced the S-01 blenderplayer crash.
 for a fixed time and writes measurements, so Catalna can produce that evidence in
 one command on Tier A hardware.
 
+### Menu-idle heave fix and smoke gate
+
+The heave force used to be applied only inside `drive()`, which ran only while
+`mode == "playing"`. Bullet integrates gravity in every mode, so the raft
+free-fell in menu, pause and results; the smoke never saw it because it started
+playing on frame 1. Measured in UPBGE on the Windows Tier A laptop before the
+fix: **z 0.314 -> -352.8 m in an 8 s menu idle**, while the same run floated at
+`z_range [0.2887, 0.3393]` once playing.
+
+`rr.core.prototype` now splits the step: `heave()` is applied in every mode and
+`frame_forces()` adds thrust and paddle torque only while playing;
+`prototype_entry` applies one force step per frame from the current mode and
+steps `TeleportGuard` in every mode. No tunable changed.
+
+The smoke now idles `SMOKE_MENU_SECONDS` (2 s) in the menu first and reports
+`menu_seconds`, `menu_frames`, `menu_z_range`, `menu_ok` and `rest_z_bounds`
+(new keys; existing keys unchanged). `ok` additionally requires
+`menu_z_range` inside `resting_bounds()`, which is `float_height()` plus the
+`wave_amplitude` band widened by the heave damping lag
+`damping * amplitude * frequency / stiffness`; all terms are existing constants.
+Restoring the old playing-only call site makes the same smoke report
+`ok:false` with `menu_z_range [-19.0771, 0.314]`, so the gate catches this class
+of bug.
+
 ## Not verified / outstanding
 
-- **Runtime gameplay, audio playback and collisions** — blocked by the GPU above.
+- **Runtime gameplay, audio playback and collisions** — blocked on P1's AMD iGPU
+  (above); the scripted smoke itself now runs and passes on the Windows Tier A
+  laptop (`ok:true`, 20 s, `menu_ok:true`).
+- **Manual 60 s playtest** — menu idle, start, paddling and pause/resume have not
+  been played by hand since the heave split.
 - **Audio aesthetics** — never auditioned; all cues are structurally valid placeholders.
 - **HUD legibility and layout** — the text objects are parented in camera space with
   computed extents, but nothing has been seen rendered.
