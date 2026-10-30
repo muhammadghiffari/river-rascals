@@ -221,12 +221,10 @@ def _load_or_fail(root: Path, rel: str, bad: list[str]):
 
     Returns None instead of raising so one bad file cannot traceback the whole
     run: an unfetched Git LFS pointer (the file starts with the LFS pointer
-    text) and anything PIL cannot decode both become plain FAIL lines.
+    text) and anything PIL cannot decode both become plain FAIL lines. The LFS
+    check needs no Pillow, so it also works on Pillow-less machines (CI).
     """
     p = root / rel
-    if Image is None:
-        bad.append(f"FAIL {rel}: Pillow is required to decode images (pip install pillow)")
-        return None
     try:
         head = p.open("rb").read(100)
     except OSError as exc:
@@ -234,6 +232,9 @@ def _load_or_fail(root: Path, rel: str, bad: list[str]):
         return None
     if head.startswith(b"version https://git-lfs"):
         bad.append(f"FAIL {rel}: unfetched Git LFS pointer (run: git lfs pull)")
+        return None
+    if Image is None:
+        bad.append(f"FAIL {rel}: Pillow is required to decode images (pip install pillow)")
         return None
     try:
         with Image.open(p) as img:
