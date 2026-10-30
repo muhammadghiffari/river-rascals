@@ -1,1 +1,4 @@
 asset_id,file,source_url_or_tool,author,licence,prompt_or_notes,date_added,added_by
+UI_IconSet,assets/ui/T_UI_IconSet_A.png,tools/gen_ui_vfx_assets.py,River Rascals team,CC0 (own-made),"Deterministic Pillow+numpy generator, seed 20261029, no external sources; atlas map in assets/ui/T_UI_IconSet_A.json and .csv",2026-10-29,builder (GLM-5.3-Flash)
+VX_Splash,assets/vfx/T_VX_Splash_A.png,tools/gen_ui_vfx_assets.py,River Rascals team,CC0 (own-made),"Deterministic droplet-burst sim, seed 20261029, no external sources; additive blend assumed (documented in T_VX_Splash_A.json)",2026-10-29,builder (GLM-5.3-Flash)
+VX_Wake,assets/vfx/T_VX_Wake_A.png,tools/gen_ui_vfx_assets.py,River Rascals team,CC0 (own-made),"Deterministic analytic foam field, seed 20261029, no external sources; tileable both axes (documented in T_VX_Wake_A.json)",2026-10-29,builder (GLM-5.3-Flash)

@@ -1,0 +1,10 @@
+name,x,y,w,h
+coin,0,0,128,128
+fish,128,0,128,128
+heart_full,256,0,128,128
+heart_empty,384,0,128,128
+flag,512,0,128,128
+gamepad,640,0,128,128
+gear,768,0,128,128
+speaker_on,896,0,128,128
+speaker_off,0,128,128,128

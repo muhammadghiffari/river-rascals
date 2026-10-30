@@ -1,0 +1,14 @@
+{
+  "atlas": "T_VX_Wake_A.png",
+  "size": [
+    256,
+    256
+  ],
+  "tileable": "both axes (V arms at 45 deg from apex; integer-cycle modulation)",
+  "generated_by": "tools/gen_ui_vfx_assets.py",
+  "seed": 20261029,
+  "blend": "ALPHA blend assumed (soft foam over water); additive-safe too: RGB is bright wherever alpha > 0 and zeroed wherever alpha == 0, so both alpha-multiplied additive (SRC_ALPHA, ONE) and raw ADD (ONE, ONE) only brighten. VERIFY in UPBGE which blend mode the material uses.",
+  "pillow_version": "13.0.0",
+  "numpy_version": "2.5.4",
+  "pixel_hash": "cf6349558f78b21fda8770c6f5c52f6357a57e80834d17c722d461752209c34c"
+}
