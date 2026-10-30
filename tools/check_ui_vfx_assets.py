@@ -227,7 +227,8 @@ def _load_or_fail(root: Path, rel: str, bad: list[str]):
     """
     p = root / rel
     try:
-        head = p.open("rb").read(100)
+        with p.open("rb") as fh:
+            head = fh.read(100)
     except OSError as exc:
         bad.append(f"FAIL {rel}: cannot read file ({exc})")
         return None
