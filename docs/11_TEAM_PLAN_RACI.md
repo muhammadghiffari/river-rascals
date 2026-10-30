@@ -44,7 +44,7 @@ do not skip it. Sat/Sun stay free (see §12).
 | Mon | 20 min | **Weekly sync / planning** (R3 prompt) | P1 runs, all attend | board: Ready column filled, ≤ 3 items per person, risks + cut candidates named |
 | Wed | 15 min | **Mid-week sync** — blockers only, no status theatre | P1 | blocker issues labelled `blocked`, decision or escalation |
 | Fri | 20 min | **Review sweep** — close the review rotation (§6), merge green PRs | rotation reviewer | PRs merged or sent back with a reason |
-| Fri | 45 min | **Weekly playtest + build** (see below) | P3 runs, all play | `docs/reports/playtest_YYYY-MM-DD.md`, issues for bugs, fps table on Tier B |
+| Fri | 45 min | **Weekly playtest + build** (see below) | P3 runs, all play | `docs/reports/playtest_YYYY-MM-DD.md`, issues for bugs, fps table on P3's laptop (Tier C, docs/16) |
 | daily | async | Handoff note (R1) on the active issue | whoever worked last | 10 lines: changed / in progress / decisions / blockers / next 3 |
 | every 2 wk | 10 min | Demo video + milestone burndown check | P1 | link posted in chat |
 

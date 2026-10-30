@@ -35,7 +35,7 @@ What it does: `git lfs install` → init/commit → create repo + push `main` �
 2. `git lfs ls-files` works; `.gitattributes` contains LFS rules. Add a tiny test: `git lfs track` shows patterns.
 3. `.github/CODEOWNERS`: replace `@p1 @p2 @p3` with real usernames (PR).
 4. `gh issue list --limit 100 | wc -l` ≥ 56; milestones M0–M5 exist.
-5. Create the GitHub Project board (docs/11 §5) and add all issues.
+5. Create the GitHub Project board (docs/11 §7) and add all issues.
 6. Enable Dependabot alerts / secret scanning if the plan allows (Settings → Code security).
 7. Record in `docs/12` §10 "Setup log": date, repo URL, protection status, LFS quota note.
 
