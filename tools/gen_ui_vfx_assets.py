@@ -533,7 +533,7 @@ def write_atlas_maps(entries: list[dict], ui_dir: Path, vfx_dir: Path) -> None:
     (ui_dir / "T_UI_IconSet_A.json").write_text(json.dumps(ui_json, indent=2) + "\n",
                                                 encoding="utf-8")
     with (ui_dir / "T_UI_IconSet_A.csv").open("w", newline="", encoding="utf-8") as fh:
-        wtr = csv.writer(fh)
+        wtr = csv.writer(fh, lineterminator="\n")
         wtr.writerow(["name", "x", "y", "w", "h"])
         wtr.writerows([e["name"], e["x"], e["y"], e["w"], e["h"]] for e in entries)
 
