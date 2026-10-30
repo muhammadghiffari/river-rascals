@@ -125,10 +125,9 @@ rows exist and the pin block in `docs/03` §2 is filled.
 ### 3.0 Machine labels
 
 `docs/16_HARDWARE_PROFILES.md` records P2 = ASUS V16 = Tier A and **P3 = mid-spec laptop =
-Tier C** (post-#65; the copy of `docs/16` on this branch still says Tier B); P1's machine tier is not
-recorded on this branch. This report uses the machine
-labels P1/P2/P3 and does not assign a different tier to P3. Fill the hardware rows in `docs/16` when
-the specs are known (a human decision; not changed by this PR).
+Tier C** (HP ZBook 14 G2; post-#65, aligned on this branch), with P1's Aspire = Tier B. This report
+uses the machine labels P1/P2/P3 and does not assign a different tier to P3. The full hardware rows
+in `docs/16` were filled upstream post-#65 (PR #65/#67); this branch aligns the tier labels only.
 
 ### 3.1 Feature grid
 
@@ -362,7 +361,11 @@ unit tests; they do not establish UPBGE compatibility.
 
 - `ruff check src tests tools scripts game` → `All checks passed!`
 - `python -m compileall -q src tools game` → exit 0.
-- `python -m unittest discover -s tests` → 61 tests, `OK` (no skips; re-run 2026-10-29 at 2b71d3a — supersedes the earlier `47 tests, OK (skipped=1)`).
+- `python -m unittest discover -s tests` → 61 tests, `OK`. Verified 2026-10-30 on Windows 11
+  (Python 3.12.10) at this branch (tests identical to 2b71d3a): `OK (skipped=1)` — the skip is
+  `test_hardening.HookTests.test_allows_feature_branch_and_forwards_input_to_lfs`, skipped on Windows
+  by design since #60 (`skipIf(os.name == "nt")`, covered by Linux CI); a no-skip `OK` is Linux-only.
+  Supersedes the earlier `47 tests, OK (skipped=1)`.
 
 **Manual windowed test — VERIFY until the owner reports output:** from the repo root, launch
 a **new** UPBGE process, never run this generator in a session with unsaved work:

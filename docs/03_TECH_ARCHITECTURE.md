@@ -13,7 +13,7 @@ Facts gathered at handover time: UPBGE **0.50** is built on **Blender 5.0.1** (r
 ```
 UPBGE version: ____   Blender base: ____   URL: ____   SHA256: ____   Decided: ____ by ____
 ```
-**S-01 status (2026-10-24)**: probe generator, component and test matrix prepared — `docs/reports/S-01_engine_decision.md`. Pin unchanged; the matrix must be filled on P2/Tier A and on both P1 and P3 (P3 = Tier C per `docs/16` post-#65; the copy on this branch predates #65) before this block is completed. Known 0.50 Linux issue (reported by P3, no in-repo log yet): creating a Python Component via `bpy` in `blender -b` segfaults, so scene generation is windowed (`tools/blender/gen_spike_engine.py` refuses background component creation).
+**S-01 status (2026-10-24)**: probe generator, component and test matrix prepared — `docs/reports/S-01_engine_decision.md`. Pin unchanged; the matrix must be filled on P2/Tier A and on both P1 and P3 (P3 = Tier C per `docs/16` post-#65; aligned on this branch) before this block is completed. Known 0.50 Linux issue (reported by P3, no in-repo log yet): creating a Python Component via `bpy` in `blender -b` segfaults, so scene generation is windowed (`tools/blender/gen_spike_engine.py` refuses background component creation).
 Never upgrade the pinned engine without a PR that re-runs smoke tests on both hardware tiers.
 **Re-checked 2026-10-23**: 0.50 (Blender 5.0.1, Jan 2026) is still the latest *stable* release. The UPBGE repo also publishes automated **weekly alpha** builds (0.52/0.53 Alpha at the time of writing) — these are pre-releases and must **not** be pinned. Pin by release URL + SHA-256, not by "latest".
 
