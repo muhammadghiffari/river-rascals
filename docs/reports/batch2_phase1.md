@@ -76,7 +76,8 @@ claimed.
 - `python tools/validate_assets.py assets` — `36/36 passed`.
 - Both generators' own `--verify-only` runs passed (21 props, 12 environment).
 - Independent read-only audit reopened all 33 new libraries and matched counts.
-- Remote `origin/feat/props-env` SHA equals local `HEAD` (`d8749f7` at push).
+- Remote `origin/feat/props-env` SHA was verified equal to local `HEAD` after
+  each push (`git ls-remote`).
 
 ## Manual verification required (VERIFY)
 
