@@ -39,6 +39,45 @@ passages, real banner weights and unique original-rock object names. Collider
 counts must be reported separately; file provenance must not imply validation
 that only a custom property asserts.
 
+Original boulder alternatives use the suffix `_Own`
+(`PR_RockLarge_01_Own.blend`) instead of the docs/04 suffix list so that appending
+them beside the imported `PR_RockLarge_01..03` objects cannot silently merge
+names. This is a documented naming deviation; the validator accepts it. The
+provenance registry itself (`assets/PROVENANCE.csv`) is the only new file without
+its own row, because it is the registry rather than an asset or tool.
+
+## Result status (docs/04 section 11 P0, props and environment)
+
+| Row | Status | Evidence |
+| --- | --- | --- |
+| PR_Coin | DONE (generator/export) | 172/200 tris, `PR_Coin_01.blend` |
+| PR_GoldenFish | DONE (generator/export) | 176/400 tris, emissive gold palette cell |
+| PR_Buoy | DONE (generator/export) | 2 variants, 220/300 tris, chain stub, convex COL |
+| PR_Log | DONE (generator/export) | 3 sizes, 412/600 tris, capsule COL, knots |
+| PR_RockSmall / Med / Large | DONE (generator/export) | 3 variants each, 76–92 tris, convex COL; large has moss mask |
+| PR_CheckpointArch | DONE (generator/export) | 140/1500 tris, 8 m passage, 4-bone banner |
+| PR_FinishGate | DONE (generator/export) | 140/2000 tris, 10 m passage, confetti sockets |
+| PR_Signpost | DONE (generator/export) | 3 directions, 52/300 tris |
+| EN_PineTree | DONE (generator/export) | 3 variants, 204/800 + LOD1 80/200, sway data |
+| EN_Bush | DONE (generator/export) | 3 variants, 132/200 tris |
+| EN_BankTile | DONE (generator/export) | 4 tiles (4/8 m), 114/1500 tris, foam anchors, ≥0.3 m COL |
+| EN_RiverStrip | PARTIAL | 768/3000 tris, flow UVs; `MT_Water` is a named reference only |
+| EN_SkyDay | DONE (generator/export) | standalone world datablock, 0 tris, not assigned |
+
+"Generator/export" means geometry, budgets, naming, pivots, UVs, materials and
+sockets are measured and gated. Human appearance review, runtime hooks and Tier B
+performance remain **VERIFY** for every row, so art production sign-off is not
+claimed.
+
+## Final gates (2026-10-30)
+
+- `python -m unittest discover -s tests` — `Ran 206 tests`, `OK (skipped=1)`.
+- `ruff check .` — `All checks passed!`.
+- `python tools/validate_assets.py assets` — `36/36 passed`.
+- Both generators' own `--verify-only` runs passed (21 props, 12 environment).
+- Independent read-only audit reopened all 33 new libraries and matched counts.
+- Remote `origin/feat/props-env` SHA equals local `HEAD` (`d8749f7` at push).
+
 ## Manual verification required (VERIFY)
 
 1. P2: open each original library, inspect silhouette at 20/30 m and scale beside
