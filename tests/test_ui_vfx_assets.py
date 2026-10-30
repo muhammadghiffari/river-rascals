@@ -428,6 +428,67 @@ class CleanFailureTests(unittest.TestCase):
                             line)
 
 
+@unittest.skipUnless(HAVE_PIL and HAVE_NUMPY,
+                     "Pillow + numpy required to render a valid baseline")
+class MalformedAtlasJsonTests(unittest.TestCase):
+    """A malformed or incomplete atlas JSON must produce FAIL lines, never a
+    traceback (review finding B)."""
+
+    JSONS = ("assets/ui/T_UI_IconSet_A.json", "assets/vfx/T_VX_Splash_A.json",
+             "assets/vfx/T_VX_Wake_A.json")
+
+    @classmethod
+    def setUpClass(cls):
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.root = Path(cls._tmp.name)
+        gen.generate_all(cls.root)
+        cls._pristine = {rel: (cls.root / rel).read_bytes() for rel in cls.JSONS}
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._tmp.cleanup()
+
+    def _bad_after(self, replacements: dict[str, bytes]) -> list[str]:
+        for rel in self.JSONS:  # every case starts from the pristine baseline
+            (self.root / rel).write_bytes(self._pristine[rel])
+        for rel, content in replacements.items():
+            (self.root / rel).write_bytes(content)
+        _ok, bad = chk.run_checks(self.root)
+        return bad  # FAIL lines plus their indented error details
+
+    def test_malformed_json_fails_cleanly(self):
+        fails = self._bad_after({rel: b"{oops, not json" for rel in self.JSONS})
+        for rel in self.JSONS:
+            self.assertTrue(any(rel in line and "unreadable atlas JSON" in line
+                                for line in fails), fails)
+
+    def test_non_object_json_fails_cleanly(self):
+        bad = self._bad_after({"assets/vfx/T_VX_Wake_A.json": b"[1, 2, 3]"})
+        self.assertTrue(any("must be an object" in line for line in bad), bad)
+
+    def test_missing_keys_fail_cleanly(self):
+        bad = self._bad_after({
+            "assets/ui/T_UI_IconSet_A.json": b'{"atlas": "T_UI_IconSet_A.png"}',
+            "assets/vfx/T_VX_Splash_A.json": b'{"atlas": "T_VX_Splash_A.png"}',
+        })
+        self.assertTrue(any("'icons'" in line for line in bad), bad)
+        self.assertTrue(any("frame_size" in line for line in bad), bad)
+
+    def test_wrong_typed_frame_size_fails_cleanly(self):
+        bad = self._bad_after({
+            "assets/vfx/T_VX_Splash_A.json":
+                b'{"atlas": "T_VX_Splash_A.png", "frame_size": "128x128", "grid": 4}',
+        })
+        self.assertTrue(any("frame_size as [w, h]" in line for line in bad), bad)
+
+    def test_icon_cell_missing_coordinates_fails_cleanly(self):
+        bad = self._bad_after({
+            "assets/ui/T_UI_IconSet_A.json":
+                b'{"atlas": "T_UI_IconSet_A.png", "icons": [{"name": "coin"}]}',
+        })
+        self.assertTrue(any("missing x, y, w, h" in line for line in bad), bad)
+
+
 @unittest.skipUnless(HAVE_PIL and HAVE_NUMPY, "Pillow + numpy required for rendering")
 class EndToEndTests(unittest.TestCase):
     """Generate into a temp dir, then run the checker over the output."""

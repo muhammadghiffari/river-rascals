@@ -245,6 +245,26 @@ def _load_or_fail(root: Path, rel: str, bad: list[str]):
         return None
 
 
+def _load_json_or_fail(root: Path, rel: str, bad: list[str]) -> dict | None:
+    """Parse an atlas JSON, turning malformed files into FAIL lines.
+
+    Returns None instead of raising so one corrupt atlas JSON cannot traceback
+    the whole run: unparsable bytes, undecodable text and valid JSON that is
+    not an object all become plain FAIL lines and the JSON-dependent checks
+    for that atlas are skipped.
+    """
+    try:
+        data = json.loads((root / rel).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:  # JSONDecodeError/UnicodeDecodeError are ValueErrors
+        bad.append(f"FAIL {rel}: unreadable atlas JSON ({type(exc).__name__}: {exc})")
+        return None
+    if not isinstance(data, dict):
+        bad.append(f"FAIL {rel}: atlas JSON must be an object "
+                   f"(found {type(data).__name__})")
+        return None
+    return data
+
+
 def _alpha_rows(img) -> list[bytes]:
     """Alpha scanlines for the wake seam gate. Pure.
 
@@ -308,31 +328,45 @@ def run_checks(root: Path) -> tuple[list[str], list[str]]:
         report("ui atlas dimensions", check_dimensions(ui_w, ui_h), f"{ui_w}x{ui_h}")
         report("ui atlas alpha used", has_used_alpha(ui_img.getchannel("A").tobytes()))
 
-        ui_map = json.loads((root / EXPECTED["ui_json"]).read_text(encoding="utf-8"))
-        report("ui atlas json naming", texture_naming_errors(EXPECTED["ui_atlas"],
-                                                             ui_map.get("atlas")),
-               f"json atlas ref {ui_map.get('atlas')!r}")
-        report("ui atlas pixel hash", pixel_hash_errors(ui_img, ui_map, "T_UI_IconSet_A"),
-               f"pillow {ui_map.get('pillow_version')} / numpy {ui_map.get('numpy_version')}")
-        entries = ui_map["icons"]
-        report("ui atlas map in bounds", atlas_map_errors(entries, ui_w, ui_h),
-               f"{len(entries)} icons")
-        with (root / EXPECTED["ui_csv"]).open(encoding="utf-8") as fh:
-            csv_rows = list(csv.DictReader(fh))
-        csv_match = [{k: int(v) if k != "name" else v for k, v in r.items()} for r in csv_rows]
-        report("ui csv matches json",
-               [] if csv_match == entries else ["CSV rows differ from JSON icons"])
+        ui_map = _load_json_or_fail(root, EXPECTED["ui_json"], bad)
+        entries = None
+        if ui_map is not None:
+            report("ui atlas json naming", texture_naming_errors(EXPECTED["ui_atlas"],
+                                                                 ui_map.get("atlas")),
+                   f"json atlas ref {ui_map.get('atlas')!r}")
+            report("ui atlas pixel hash", pixel_hash_errors(ui_img, ui_map, "T_UI_IconSet_A"),
+                   f"pillow {ui_map.get('pillow_version')} / numpy {ui_map.get('numpy_version')}")
+            entries = ui_map.get("icons")
+            if not isinstance(entries, list) or not all(isinstance(e, dict) for e in entries):
+                report("ui atlas map in bounds",
+                       ["atlas JSON is missing a valid 'icons' cell list "
+                        "(regenerate with the generator)"])
+                entries = None
+        if entries is not None:
+            report("ui atlas map in bounds", atlas_map_errors(entries, ui_w, ui_h),
+                   f"{len(entries)} icons")
+            with (root / EXPECTED["ui_csv"]).open(encoding="utf-8") as fh:
+                csv_rows = list(csv.DictReader(fh))
+            csv_match = [{k: int(v) if k != "name" else v for k, v in r.items()}
+                         for r in csv_rows]
+            report("ui csv matches json",
+                   [] if csv_match == entries else ["CSV rows differ from JSON icons"])
 
-        for e in entries:
-            cell = _cell_rgba(ui_img, e["x"], e["y"], e["w"], e["h"])
-            stats = alpha_usage_stats(px[3] for px in cell)
-            errs = []
-            if stats["visible"] == 0:
-                errs.append(f"icon {e['name']} cell has no visible pixels")
-            if stats["transparent"] == 0:
-                errs.append(f"icon {e['name']} cell has no transparent pixels (not an icon cut-out)")
-            report(f"icon {e['name']}", errs,
-                   f"{stats['visible']} visible px")
+            for e in entries:
+                missing = [k for k in ("x", "y", "w", "h") if k not in e]
+                if missing:
+                    report(f"icon {e.get('name', '?')}",
+                           [f"cell is missing {', '.join(missing)}"])
+                    continue
+                cell = _cell_rgba(ui_img, e["x"], e["y"], e["w"], e["h"])
+                stats = alpha_usage_stats(px[3] for px in cell)
+                errs = []
+                if stats["visible"] == 0:
+                    errs.append(f"icon {e['name']} cell has no visible pixels")
+                if stats["transparent"] == 0:
+                    errs.append(f"icon {e['name']} cell has no transparent pixels (not an icon cut-out)")
+                report(f"icon {e['name']}", errs,
+                       f"{stats['visible']} visible px")
 
     # --- splash sheet ------------------------------------------------------------
     sp_img = _load_or_fail(root, EXPECTED["splash"], bad)
@@ -344,37 +378,47 @@ def run_checks(root: Path) -> tuple[list[str], list[str]]:
         report("splash dimensions", check_dimensions(sp_w, sp_h, max_dim=VFX_MAX_DIM),
                f"{sp_w}x{sp_h} (VFX atlas limit {VFX_MAX_DIM})")
         report("splash alpha used", has_used_alpha(sp_img.getchannel("A").tobytes()))
-        sp_map = json.loads((root / EXPECTED["splash_json"]).read_text(encoding="utf-8"))
-        report("splash json naming", texture_naming_errors(EXPECTED["splash"],
-                                                           sp_map.get("atlas")),
-               f"json atlas ref {sp_map.get('atlas')!r}")
-        report("splash pixel hash", pixel_hash_errors(sp_img, sp_map, "T_VX_Splash_A"),
-               f"pillow {sp_map.get('pillow_version')} / numpy {sp_map.get('numpy_version')}")
-        fs = sp_map["frame_size"][0]
-        frame_errors = []
-        if sp_map["grid"] != [4, 4] or fs != 128 or sp_w != 512:
-            frame_errors.append(f"unexpected layout {sp_map['grid']} frame {fs} atlas {sp_w}")
-        # the blank padding frame must be explicit in the JSON, not a surprise
-        if sp_map.get("frames_used") != 15 or sp_map.get("last_frame_empty") is not True:
-            frame_errors.append(
-                "splash JSON must declare frames_used 15 and last_frame_empty true "
-                "(the 4x4 sheet's last slot is blank padding)")
-        # frame 0 must burst (bright visible pixels), frame 15 must have faded out
-        f0 = _cell_rgba(sp_img, 0, 0, fs, fs)
-        if alpha_usage_stats(px[3] for px in f0)["visible"] < 64:
-            frame_errors.append("frame 0 has almost no visible pixels")
-        f15 = _cell_rgba(sp_img, 3 * fs, 3 * fs, fs, fs)
-        if alpha_usage_stats(px[3] for px in f15)["visible"] > 0:
-            frame_errors.append("frame 15 has not fully faded")
-        report("splash frame layout + fade", frame_errors)
-        sp_energy = transparent_rgb_energy(_rgba_tuples(sp_img.tobytes()))
-        report("splash transparent-pixel RGB energy",
-               transparent_bleed_errors(sp_energy,
-                                        bool(sp_map.get("transparent_rgb_bleed"))),
-               f"{sp_energy} behind alpha == 0")
-        lum, cnt = min_visible_luminance(_rgba_tuples(sp_img.tobytes()))
-        report("splash min visible brightness (informational)", [],
-               f"min visible max-channel {lum} over {cnt} px")
+        sp_map = _load_json_or_fail(root, EXPECTED["splash_json"], bad)
+        if sp_map is not None:
+            report("splash json naming", texture_naming_errors(EXPECTED["splash"],
+                                                               sp_map.get("atlas")),
+                   f"json atlas ref {sp_map.get('atlas')!r}")
+            report("splash pixel hash", pixel_hash_errors(sp_img, sp_map, "T_VX_Splash_A"),
+                   f"pillow {sp_map.get('pillow_version')} / numpy {sp_map.get('numpy_version')}")
+            frame_size = sp_map.get("frame_size")
+            fs_ok = (isinstance(frame_size, list) and len(frame_size) == 2
+                     and all(isinstance(v, int) for v in frame_size))
+            frame_errors = []
+            if fs_ok:
+                fs = frame_size[0]
+                if sp_map.get("grid") != [4, 4] or fs != 128 or sp_w != 512:
+                    frame_errors.append(f"unexpected layout {sp_map.get('grid')} "
+                                        f"frame {fs} atlas {sp_w}")
+            else:
+                frame_errors.append("atlas JSON must declare frame_size as [w, h] "
+                                    "(regenerate with the generator)")
+            # the blank padding frame must be explicit in the JSON, not a surprise
+            if sp_map.get("frames_used") != 15 or sp_map.get("last_frame_empty") is not True:
+                frame_errors.append(
+                    "splash JSON must declare frames_used 15 and last_frame_empty true "
+                    "(the 4x4 sheet's last slot is blank padding)")
+            # frame 0 must burst (bright visible pixels), frame 15 must have faded out
+            if fs_ok:
+                f0 = _cell_rgba(sp_img, 0, 0, fs, fs)
+                if alpha_usage_stats(px[3] for px in f0)["visible"] < 64:
+                    frame_errors.append("frame 0 has almost no visible pixels")
+                f15 = _cell_rgba(sp_img, 3 * fs, 3 * fs, fs, fs)
+                if alpha_usage_stats(px[3] for px in f15)["visible"] > 0:
+                    frame_errors.append("frame 15 has not fully faded")
+            report("splash frame layout + fade", frame_errors)
+            sp_energy = transparent_rgb_energy(_rgba_tuples(sp_img.tobytes()))
+            report("splash transparent-pixel RGB energy",
+                   transparent_bleed_errors(sp_energy,
+                                            bool(sp_map.get("transparent_rgb_bleed"))),
+                   f"{sp_energy} behind alpha == 0")
+            lum, cnt = min_visible_luminance(_rgba_tuples(sp_img.tobytes()))
+            report("splash min visible brightness (informational)", [],
+                   f"min visible max-channel {lum} over {cnt} px")
 
     # --- wake strip ----------------------------------------------------------------
     wk_img = _load_or_fail(root, EXPECTED["wake"], bad)
@@ -385,12 +429,13 @@ def run_checks(root: Path) -> tuple[list[str], list[str]]:
         report("wake dimensions", check_dimensions(wk_w, wk_h, max_dim=VFX_MAX_DIM),
                f"{wk_w}x{wk_h} (VFX atlas limit {VFX_MAX_DIM})")
         report("wake alpha used", has_used_alpha(wk_img.getchannel("A").tobytes()))
-        wk_map = json.loads((root / EXPECTED["wake_json"]).read_text(encoding="utf-8"))
-        report("wake json naming", texture_naming_errors(EXPECTED["wake"],
-                                                         wk_map.get("atlas")),
-               f"json atlas ref {wk_map.get('atlas')!r}")
-        report("wake pixel hash", pixel_hash_errors(wk_img, wk_map, "T_VX_Wake_A"),
-               f"pillow {wk_map.get('pillow_version')} / numpy {wk_map.get('numpy_version')}")
+        wk_map = _load_json_or_fail(root, EXPECTED["wake_json"], bad)
+        if wk_map is not None:
+            report("wake json naming", texture_naming_errors(EXPECTED["wake"],
+                                                             wk_map.get("atlas")),
+                   f"json atlas ref {wk_map.get('atlas')!r}")
+            report("wake pixel hash", pixel_hash_errors(wk_img, wk_map, "T_VX_Wake_A"),
+                   f"pillow {wk_map.get('pillow_version')} / numpy {wk_map.get('numpy_version')}")
         rows = _alpha_rows(wk_img)
         v = seam_metrics(rows)
         report("wake tileable along length (vertical seam)",
@@ -403,7 +448,7 @@ def run_checks(root: Path) -> tuple[list[str], list[str]]:
         wk_energy = transparent_rgb_energy(_rgba_tuples(wk_img.tobytes()))
         report("wake transparent-pixel RGB energy",
                transparent_bleed_errors(wk_energy,
-                                        bool(wk_map.get("transparent_rgb_bleed"))),
+                                        bool(wk_map and wk_map.get("transparent_rgb_bleed"))),
                f"{wk_energy} behind alpha == 0")
         lum, cnt = min_visible_luminance(_rgba_tuples(wk_img.tobytes()))
         report("wake min visible brightness (informational)", [],
