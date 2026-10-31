@@ -15,7 +15,10 @@ Budgets: see `04` §4 and `03` §7. Metrics recorded per milestone in `docs/repo
 In UPBGE: `bge.render.showFramerate(True)`, `showProfile(True)`, `showProperties(True)` (VERIFY in S-01); GPU/CPU stats via Blender statistics; OS tools (Task Manager/GPU-Z/MSI Afterburner/`nvidia-smi`). Always profile a **standalone build** (not the editor viewport) for final numbers. Method: reproduce → measure → change one thing → re-measure → record. Common suspects: shadows, 2D filters, transparent overdraw (water, foam, particles), many lights, skinned meshes, Python per-frame allocations, physics collider complexity.
 
 ## 4. Smoke test
-`python tools/run_game.py game/<scene>.blend --smoke --seconds 20` ⇒ JSON `{fps_avg, fps_min, fps_p5, distance_moved_m, ok}`. Pass: `ok:true` and fps ≥ tier target. Add scenario variants for PH-01..PH-09.
+`python tools/run_game.py game/<scene>.blend --smoke --seconds 20` ⇒ JSON
+`{seconds, warmup_s, fps_avg, fps_min, p1_low_fps, frame_time_ms {p50, p95, p99, max}, stutter_count, frames_measured, measured_s, fps_crosscheck {samples, post_warmup_samples, min_fps, median_fps, mean_post_warmup_fps, max_fps}, expect_movement, distance_moved_m, moved_ok, ok}`.
+Frame-time stats come from per-frame `perf_counter` deltas summarized by `rr.core.benchstats` after discarding `warmup_s` of cumulative frame time (configure via `RR_SMOKE_WARMUP`, default 3 s); `fps_crosscheck` is only an additive cross-check of per-second `getAverageFrameRate()` samples (median + post-warmup mean; sample count and `max_fps` stay visible so one outlier cannot hide in the mean). `ok` = performance gate (frames measured) AND, when `expect_movement` is true, `moved_ok` (distance > 1 m). Static scenes set `RR_SMOKE_EXPECT_MOVEMENT=0` and pass on performance alone. The old `fps_p5` key is gone; use `frame_time_ms.p95` and `p1_low_fps`.
+Pass: `ok:true` and fps ≥ tier target. Add scenario variants for PH-01..PH-09.
 
 ## 5. Playtest protocol (weekly, P3 leads)
 Script: 5-min brief → play chapter without help → observe silently (timestamps of confusion/fun/frustration) → 5 questions (GDD §16) → bug list. Record: completion time, sinks, collects, quits. Minimum 3 people per milestone; include one non-gamer.
